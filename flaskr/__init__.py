@@ -27,7 +27,6 @@ def create_app(test_config=None):
         db.init_app(app)
 
         # add command line commands
-        app.cli.add_command(init_db_command)
         migrate = Migrate(app, db)
         app.cli.add_command(migrate_command)
 
@@ -38,20 +37,6 @@ def create_app(test_config=None):
         logging.error(e)
 
     return app
-
-@click.command("init-db")
-@with_appcontext
-def init_db_command():
-    """Clear existing data and create new tables."""
-    try:
-        db.drop_all()
-        db.create_all()
-        db.session.commit()
-        click.echo("Initialized the database.")
-    except Exception as e:
-        logging.error('Failed to initialize database')
-        logging.error(e)
-        db.session.rollback()
 
 @click.command("db")
 @with_appcontext
