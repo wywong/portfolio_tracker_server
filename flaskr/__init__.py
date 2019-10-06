@@ -3,6 +3,7 @@ import os
 from flask import Flask
 from flask.cli import with_appcontext
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate, MigrateCommand
 import click
 import logging
 
@@ -27,6 +28,8 @@ def create_app(test_config=None):
 
         # add command line commands
         app.cli.add_command(init_db_command)
+        migrate = Migrate(app, db)
+        app.cli.add_command(migrate_command)
 
         # register routes
         from flaskr.routes.stock_transactions import stock_transactions
@@ -49,3 +52,8 @@ def init_db_command():
         logging.error('Failed to initialize database')
         logging.error(e)
         db.session.rollback()
+
+@click.command("db")
+@with_appcontext
+def migrate_command():
+    MigrateCommand()
