@@ -31,3 +31,30 @@ def test_get_existing_transaction(app, client):
     with app.app_context():
         StockTransaction.query.filter_by(id=1).delete()
         db.session.commit()
+
+def test_create_transaction(app, client):
+    response = client.post('/transaction/', data=json.dumps(dict(
+        transaction_type = 1,
+        stock_symbol = "XAW.TO",
+        cost_per_unit = 2718,
+        quantity = 200,
+        trade_fee = 999,
+        account_id = None
+    )))
+    json_data = json.loads(response.data)
+    assert json_data['transaction_type'] == 1
+    assert json_data['stock_symbol'] == 'XAW.TO'
+    assert json_data['cost_per_unit'] == 2718
+    assert json_data['quantity'] == 200
+    assert json_data['trade_fee'] == 999
+
+def test_create_transaction_bad(app, client):
+    response = client.post('/transaction/', data=json.dumps(dict(
+        transaction_type = 1,
+        stock_symbol = "XAW.TO",
+        cost_per_unit = "asdf",
+        quantity = 200,
+        trade_fee = 999,
+        account_id = None
+    )))
+    assert json.loads(response.data) == None
