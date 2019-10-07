@@ -11,6 +11,7 @@ def app():
         'TESTING': True,
         'SQLALCHEMY_DATABASE_URI': \
             'postgresql+psycopg2://postgres@localhost:5432/portfoliotest',
+        'SQLALCHEMY_ECHO':  True,
         'SQLALCHEMY_TRACK_MODIFICATIONS': False
     })
     print(app.config)
