@@ -2,6 +2,7 @@ import os
 
 from flask import Flask
 from flask.cli import with_appcontext
+from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate, MigrateCommand
 import click
@@ -9,10 +10,12 @@ import logging
 
 
 db = SQLAlchemy()
+login_manager = LoginManager()
 
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
+    login_manager.init_app(app)
 
     try:
         import flaskr.model
@@ -33,6 +36,10 @@ def create_app(test_config=None):
         # register routes
         from flaskr.routes.stock_transactions import stock_transactions
         app.register_blueprint(stock_transactions)
+        from flaskr.routes.auth import auth_bp
+        app.register_blueprint(auth_bp)
+        from flaskr.routes.index import index_bp
+        app.register_blueprint(index_bp)
     except Exception as e:
         logging.error(e)
 

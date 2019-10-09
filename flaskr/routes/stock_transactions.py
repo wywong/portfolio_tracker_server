@@ -5,7 +5,7 @@ from flask import Blueprint, jsonify, request
 from flaskr import db
 from flaskr.model import StockTransaction, StockTransactionType
 
-stock_transactions = Blueprint('main', __name__, url_prefix="/transaction")
+stock_transactions = Blueprint('stock_transaction_bp', __name__, url_prefix="/transaction")
 
 @stock_transactions.route('/<int:id>', methods=['GET'])
 def get_transaction(id):
