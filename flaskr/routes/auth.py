@@ -1,9 +1,10 @@
 from flask_login import current_user, login_user
+from flaskr import db
 from flaskr.model import User
 from flask import Blueprint, flash, redirect, render_template, url_for
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, Email, EqualTo, Length
 
 
 auth_bp = Blueprint('auth_bp', __name__, url_prefix="/auth")
@@ -29,3 +30,31 @@ def login():
         login_user(user, remember=form.remember_me.data)
         return redirect(url_for('index_bp.index'))
     return render_template('login.html', title='Sign In', form=form)
+
+
+class RegistrationForm(FlaskForm):
+    email = StringField('email', validators=[
+        DataRequired(),
+        Email(),
+        Length(min=4, max=128),
+    ])
+    password = PasswordField('password', validators=[
+        DataRequired(),
+        Length(min=8, max=128),
+        EqualTo('confirm_password', message='Passwords must match')
+    ])
+    confirm_password = PasswordField('repeat password')
+    submit = SubmitField("Register")
+
+
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(email=form.email.data, password_hash="")
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('Thanks for registering')
+        return redirect(url_for('auth_bp.login'))
+    return render_template('register.html', form=form)

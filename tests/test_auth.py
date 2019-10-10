@@ -49,3 +49,39 @@ def test_login_fail(auth_setup, client):
     assert response.status_code == 200
     with client.session_transaction() as sess:
         assert 'user_id' not in sess.keys()
+
+def test_register_success(auth_setup, client):
+    new_dude_email = "euler@mathematicianlineage.com"
+    response = client.post(
+        '/auth/register',
+        data=dict(
+            email = new_dude_email,
+            password = "graph theory",
+            confirm_password = "graph theory"
+        ),
+        follow_redirects=True
+    )
+    assert response.status_code == 200
+    with auth_setup.app_context():
+        new_user_exists = db.session.query(
+            User.query.filter(User.email == new_dude_email).exists()
+        ).scalar()
+        assert new_user_exists
+
+def test_register_fail(auth_setup, client):
+    new_dude_email = "euler@mathematicianlineage.com"
+    response = client.post(
+        '/auth/register',
+        data=dict(
+            email = new_dude_email,
+            password = "graph theory",
+            confirm_password = "number theory"
+        ),
+        follow_redirects=True
+    )
+    assert response.status_code == 200
+    with auth_setup.app_context():
+        new_user_exists = db.session.query(
+            User.query.filter(User.email == new_dude_email).exists()
+        ).scalar()
+        assert not new_user_exists

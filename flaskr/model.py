@@ -13,7 +13,7 @@ def load_user(user_id):
 class User(UserMixin, db.Model):
     __tablename__ = "portfolio_user"
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(128), unique=True, nullable=False)
+    email = db.Column(db.String(128), index=True, unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     accounts = db.relationship('InvestmentAccount')
 
