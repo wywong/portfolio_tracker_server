@@ -1,14 +1,15 @@
 import os
 import tempfile
-
 import pytest
 from flaskr import create_app, db
 
+
 @pytest.fixture
 def app():
-
     app = create_app({
         'TESTING': True,
+        'WTF_CSRF_ENABLED': False,
+        'SECRET_KEY': 'dev',
         'SQLALCHEMY_DATABASE_URI': \
             'postgresql+psycopg2://postgres@localhost:5432/portfoliotest',
         'SQLALCHEMY_ECHO':  True,
@@ -21,8 +22,6 @@ def app():
         db.create_all()
         db.session.commit()
     yield app
-
-
 
 @pytest.fixture
 def client(app):
