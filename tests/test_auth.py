@@ -4,6 +4,7 @@ import pytest
 from flaskr import db
 from flaskr.model import User
 
+
 some_user_email = "bob@mathematicianlineage.com"
 totally_secure_password = "correct horse battery staple"
 
@@ -22,7 +23,6 @@ def auth_setup(app):
         with app.app_context():
             User.query.delete()
             db.session.commit()
-
 
 def test_login_success(auth_setup, client):
     response = client.post(

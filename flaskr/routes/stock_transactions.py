@@ -1,3 +1,4 @@
+from flask_login import login_required
 import json
 import logging
 import traceback
@@ -8,6 +9,7 @@ from flaskr.model import StockTransaction, StockTransactionType
 stock_transactions = Blueprint('stock_transaction_bp', __name__, url_prefix="/transaction")
 
 @stock_transactions.route('/<int:id>', methods=['GET'])
+@login_required
 def get_transaction(id):
     stock_transaction = StockTransaction.query.get(id)
     if stock_transaction is None:
@@ -16,6 +18,7 @@ def get_transaction(id):
         return jsonify(dict(stock_transaction))
 
 @stock_transactions.route('/', methods=['POST'])
+@login_required
 def create_transaction():
     try:
         json_data = json.loads(request.data)
@@ -31,6 +34,7 @@ def create_transaction():
 
 
 @stock_transactions.route('/<int:id>', methods=['PUT'])
+@login_required
 def update_transaction(id):
     try:
         json_data = json.loads(request.data)
@@ -55,6 +59,7 @@ def deserialize_transaction(data):
     return json_data
 
 @stock_transactions.route('/<int:id>', methods=['DELETE'])
+@login_required
 def delete_transaction(id):
     try:
         db.session.query(StockTransaction) \
