@@ -1,7 +1,11 @@
 import json
 import pytest
 from flaskr import db
-from flaskr.model import InvestmentAccount
+from flaskr.model import (
+    InvestmentAccount,
+    StockTransaction,
+    StockTransactionType
+)
 
 
 investment_account_1 = dict(
@@ -171,3 +175,24 @@ def test_delete_account_other_user(investment_account_setup,
     with investment_account_setup.app_context():
         account = InvestmentAccount.query.get(1)
         assert account is not None
+
+def test_delete_account_with_transactions(investment_account_setup, client):
+    with investment_account_setup.app_context():
+        db.session.add(StockTransaction(
+            transaction_type = StockTransactionType.buy,
+            stock_symbol = "XAW.TO",
+            cost_per_unit = 2612,
+            quantity = 600,
+            trade_fee = 995,
+            account_id = 1,
+            user_id = 1
+        ))
+        db.session.commit()
+    response = client.delete('/investment_account/1')
+    assert json.loads(response.data) == None
+    with investment_account_setup.app_context():
+        account = InvestmentAccount.query.get(1)
+        assert account == None
+        transaction = StockTransaction.query.get(1)
+        assert transaction is None
+        StockTransaction.query.delete()

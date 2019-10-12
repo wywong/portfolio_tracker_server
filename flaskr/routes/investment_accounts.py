@@ -4,7 +4,7 @@ import logging
 import traceback
 from flask import Blueprint, jsonify, request
 from flaskr import db, apply_user_id
-from flaskr.model import InvestmentAccount
+from flaskr.model import InvestmentAccount, StockTransaction
 
 
 investment_accounts = Blueprint('investment_account_bp',
@@ -73,6 +73,10 @@ def update_investment_account(id):
 @login_required
 def delete_investment_account(id):
     try:
+        db.session.query(StockTransaction) \
+            .filter((StockTransaction.account_id == id) & \
+                    (StockTransaction.user_id == current_user.id)) \
+            .delete()
         db.session.query(InvestmentAccount) \
             .filter((InvestmentAccount.id == id) & \
                     (InvestmentAccount.user_id == current_user.id)) \
