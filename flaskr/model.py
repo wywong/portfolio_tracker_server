@@ -66,3 +66,7 @@ class InvestmentAccount(db.Model):
                         nullable=False)
     transactions = db.relationship('StockTransaction',
                                    backref="investment_account")
+    def __iter__(self):
+        yield ('id', self.id)
+        yield ('name', self.name)
+        yield ('taxable', self.taxable)

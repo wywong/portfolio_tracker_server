@@ -3,8 +3,12 @@ import json
 import logging
 import traceback
 from flask import Blueprint, jsonify, request
-from flaskr import db
-from flaskr.model import StockTransaction, StockTransactionType
+from flaskr import db, apply_user_id
+from flaskr.model import (
+    StockTransaction,
+    StockTransactionType
+)
+
 
 stock_transactions = Blueprint('stock_transaction_bp', __name__, url_prefix="/transaction")
 
@@ -20,11 +24,21 @@ def get_transaction(id):
     else:
         return jsonify(dict(stock_transaction))
 
+@stock_transactions.route('/all', methods=['GET'])
+@login_required
+def get_all_transaction():
+    stock_transactions = db.session.query(StockTransaction) \
+            .filter(StockTransaction.user_id == current_user.id) \
+            .all()
+    return jsonify(list(map(dict, stock_transactions)))
+
 @stock_transactions.route('/', methods=['POST'])
 @login_required
 def create_transaction():
     try:
         json_data = apply_user_id(json.loads(request.data))
+        if 'id' in json_data:
+            del json_data['id']
         transaction = StockTransaction(**deserialize_transaction(json_data))
         db.session.add(transaction)
         db.session.commit()
@@ -55,10 +69,6 @@ def update_transaction(id):
         logging.error(traceback.format_exc())
         db.session.rollback()
         return jsonify(None)
-
-def apply_user_id(data):
-    data['user_id'] = current_user.get_id()
-    return data
 
 def deserialize_transaction(data):
     json_data = data.copy()

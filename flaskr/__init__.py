@@ -2,7 +2,7 @@ import os
 
 from flask import Flask
 from flask.cli import with_appcontext
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate, MigrateCommand
 import click
@@ -33,6 +33,8 @@ def create_app(test_config=None):
         app.cli.add_command(migrate_command)
 
         # register routes
+        from flaskr.routes.investment_accounts import investment_accounts
+        app.register_blueprint(investment_accounts)
         from flaskr.routes.stock_transactions import stock_transactions
         app.register_blueprint(stock_transactions)
         from flaskr.routes.auth import auth_bp
@@ -44,6 +46,10 @@ def create_app(test_config=None):
     login_manager.init_app(app)
 
     return app
+
+def apply_user_id(data):
+    data['user_id'] = int(current_user.get_id())
+    return data
 
 @click.command("db")
 @with_appcontext

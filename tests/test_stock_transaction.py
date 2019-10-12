@@ -17,6 +17,26 @@ stock_transaction_1 = dict(
     user_id = 1
 )
 
+stock_transaction_2 = dict(
+    transaction_type = StockTransactionType.buy,
+    stock_symbol = "VAB.TO",
+    cost_per_unit = 2601,
+    quantity = 200,
+    trade_fee = 999,
+    account_id = None,
+    user_id = 1
+)
+
+stock_transaction_3 = dict(
+    transaction_type = StockTransactionType.buy,
+    stock_symbol = "ZPR.TO",
+    cost_per_unit = 992,
+    quantity = 500,
+    trade_fee = 999,
+    account_id = None,
+    user_id = 2
+)
+
 @pytest.fixture
 def stock_transaction_setup(auth_app_user_1):
     auth_app = auth_app_user_1
@@ -50,6 +70,25 @@ def test_get_transaction_other_user(stock_transaction_setup, auth_app_user_2, cl
     response = client.get('/transaction/1')
     assert response.data == b'null\n'
 
+def test_get_all_transactions(stock_transaction_setup, client):
+    with stock_transaction_setup.app_context():
+        db.session.add(StockTransaction(**stock_transaction_2))
+        db.session.add(StockTransaction(**stock_transaction_3))
+        db.session.commit()
+    response = client.get('/transaction/all')
+    json_data = json.loads(response.data)
+    assert len(json_data) == 2
+
+def test_get_all_transactions(stock_transaction_setup, auth_app_user_2, client):
+    with stock_transaction_setup.app_context():
+        db.session.add(StockTransaction(**stock_transaction_2))
+        db.session.add(StockTransaction(**stock_transaction_3))
+        db.session.commit()
+    response = client.get('/transaction/all')
+    json_data = json.loads(response.data)
+    assert len(json_data) == 1
+
+
 def test_create_transaction(stock_transaction_setup, client):
     response = client.post('/transaction/', data=json.dumps(dict(
         transaction_type = 1,
@@ -78,6 +117,25 @@ def test_create_transaction_bad(stock_transaction_setup, client):
         user_id = 1
     )))
     assert json.loads(response.data) == None
+
+def test_create_transaction_other_user(stock_transaction_setup,
+                                       auth_app_user_2,
+                                       client):
+    request_data = dict(
+        transaction_type = 1,
+        stock_symbol = "XAW.TO",
+        cost_per_unit = 2718,
+        quantity = 200,
+        trade_fee = 999,
+        account_id = None,
+        user_id = 1
+    )
+    response = client.post('/transaction/', data=json.dumps(request_data))
+    json_data = json.loads(response.data)
+    for k, v in json_data.items():
+        if k == 'id':
+            continue
+        assert v == request_data[k]
 
 def test_update_transaction(stock_transaction_setup, client):
     data_dict = stock_transaction_1.copy()
@@ -116,13 +174,13 @@ def test_update_transaction_bad(stock_transaction_setup, client):
         assert transaction.quantity == 100
 
 def test_delete_transaction(stock_transaction_setup, client):
-    client.delete('transaction/1')
+    client.delete('/transaction/1')
     with stock_transaction_setup.app_context():
         transaction = StockTransaction.query.get(1)
         assert transaction == None
 
 def test_delete_transaction_other_user(stock_transaction_setup, auth_app_user_2, client):
-    client.delete('transaction/1')
+    client.delete('/transaction/1')
     with stock_transaction_setup.app_context():
         transaction = StockTransaction.query.get(1)
         assert transaction is not None
