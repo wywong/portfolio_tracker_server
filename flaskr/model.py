@@ -16,6 +16,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(128), index=True, unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     accounts = db.relationship('InvestmentAccount')
+    stock_transactions = db.relationship('StockTransaction')
 
     def __repr__(self):
         return '<User {}>'.format(self.id)
@@ -40,7 +41,11 @@ class StockTransaction(db.Model):
     cost_per_unit = db.Column(db.Integer, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     trade_fee = db.Column(db.Integer, nullable=False)
-    account_id = db.Column(db.Integer, db.ForeignKey('investment_account.id'))
+    account_id = db.Column(db.Integer,
+                           db.ForeignKey('investment_account.id'))
+    user_id = db.Column(db.Integer,
+                        db.ForeignKey('portfolio_user.id'),
+                        nullable=False)
 
     def __iter__(self):
         yield ('id', self.id)
@@ -56,6 +61,8 @@ class InvestmentAccount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     taxable = db.Column(db.Boolean, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('portfolio_user.id'))
+    user_id = db.Column(db.Integer,
+                        db.ForeignKey('portfolio_user.id'),
+                        nullable=False)
     transactions = db.relationship('StockTransaction',
                                    backref="investment_account")

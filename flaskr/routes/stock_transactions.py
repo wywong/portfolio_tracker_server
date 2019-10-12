@@ -1,4 +1,4 @@
-from flask_login import login_required
+from flask_login import login_required, current_user
 import json
 import logging
 import traceback
@@ -11,7 +11,10 @@ stock_transactions = Blueprint('stock_transaction_bp', __name__, url_prefix="/tr
 @stock_transactions.route('/<int:id>', methods=['GET'])
 @login_required
 def get_transaction(id):
-    stock_transaction = StockTransaction.query.get(id)
+    stock_transaction = db.session.query(StockTransaction) \
+            .filter((StockTransaction.id == id) & \
+                    (StockTransaction.user_id == current_user.id)) \
+            .one_or_none()
     if stock_transaction is None:
         return jsonify(None)
     else:
@@ -21,7 +24,7 @@ def get_transaction(id):
 @login_required
 def create_transaction():
     try:
-        json_data = json.loads(request.data)
+        json_data = apply_user_id(json.loads(request.data))
         transaction = StockTransaction(**deserialize_transaction(json_data))
         db.session.add(transaction)
         db.session.commit()
@@ -37,12 +40,13 @@ def create_transaction():
 @login_required
 def update_transaction(id):
     try:
-        json_data = json.loads(request.data)
+        json_data = apply_user_id(json.loads(request.data))
         update_data = deserialize_transaction(json_data)
         if 'id' in update_data:
             del update_data['id']
         db.session.query(StockTransaction) \
-            .filter(StockTransaction.id == id) \
+            .filter((StockTransaction.id == id) & \
+                    (StockTransaction.user_id == current_user.id)) \
             .update(update_data)
         db.session.commit()
         return jsonify(json_data)
@@ -51,6 +55,10 @@ def update_transaction(id):
         logging.error(traceback.format_exc())
         db.session.rollback()
         return jsonify(None)
+
+def apply_user_id(data):
+    data['user_id'] = current_user.get_id()
+    return data
 
 def deserialize_transaction(data):
     json_data = data.copy()
@@ -63,7 +71,8 @@ def deserialize_transaction(data):
 def delete_transaction(id):
     try:
         db.session.query(StockTransaction) \
-            .filter(StockTransaction.id == id) \
+            .filter((StockTransaction.id == id) & \
+                    (StockTransaction.user_id == current_user.id)) \
             .delete()
         db.session.commit()
         return jsonify(None)

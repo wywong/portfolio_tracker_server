@@ -1,33 +1,38 @@
 import json
 import pytest
 from flaskr import db
-from flaskr.model import StockTransaction, StockTransactionType
+from flaskr.model import (
+    StockTransaction,
+    StockTransactionType
+)
+
 
 stock_transaction_1 = dict(
-    id = 1,
     transaction_type = StockTransactionType.buy,
     stock_symbol = "VCN.TO",
     cost_per_unit = 3141,
     quantity = 100,
     trade_fee = 999,
-    account_id = None
+    account_id = None,
+    user_id = 1
 )
 
 @pytest.fixture
-def stock_transaction_setup(app):
+def stock_transaction_setup(auth_app_user_1):
+    auth_app = auth_app_user_1
     try:
-        with app.app_context():
+        with auth_app.app_context():
             db.session.add(StockTransaction(**stock_transaction_1))
             db.session.commit()
-        yield app
+        yield auth_app
     except Exception as e:
         assert False
     finally:
-        with app.app_context():
+        with auth_app.app_context():
             StockTransaction.query.delete()
             db.session.commit()
 
-def test_get_non_existing_transaction(client):
+def test_get_non_existing_transaction(auth_app_user_1, client):
     response = client.get('/transaction/999')
     assert response.data == b'null\n'
 
@@ -41,14 +46,19 @@ def test_get_existing_transaction(stock_transaction_setup, client):
     assert json_data['quantity'] == 100
     assert json_data['trade_fee'] == 999
 
-def test_create_transaction(app, client):
+def test_get_transaction_other_user(stock_transaction_setup, auth_app_user_2, client):
+    response = client.get('/transaction/1')
+    assert response.data == b'null\n'
+
+def test_create_transaction(stock_transaction_setup, client):
     response = client.post('/transaction/', data=json.dumps(dict(
         transaction_type = 1,
         stock_symbol = "XAW.TO",
         cost_per_unit = 2718,
         quantity = 200,
         trade_fee = 999,
-        account_id = None
+        account_id = None,
+        user_id = 1
     )))
     json_data = json.loads(response.data)
     assert json_data['transaction_type'] == 1
@@ -57,18 +67,19 @@ def test_create_transaction(app, client):
     assert json_data['quantity'] == 200
     assert json_data['trade_fee'] == 999
 
-def test_create_transaction_bad(app, client):
+def test_create_transaction_bad(stock_transaction_setup, client):
     response = client.post('/transaction/', data=json.dumps(dict(
         transaction_type = 1,
         stock_symbol = "XAW.TO",
         cost_per_unit = "asdf",
         quantity = 200,
         trade_fee = 999,
-        account_id = None
+        account_id = None,
+        user_id = 1
     )))
     assert json.loads(response.data) == None
 
-def test_update_transaction(stock_transaction_setup, app, client):
+def test_update_transaction(stock_transaction_setup, client):
     data_dict = stock_transaction_1.copy()
     data_dict['id'] = 1
     data_dict['transaction_type'] = data_dict['transaction_type'].value
@@ -76,13 +87,23 @@ def test_update_transaction(stock_transaction_setup, app, client):
     response = client.put('/transaction/1', data=json.dumps(
         data_dict
     ))
-    with app.app_context():
+    with stock_transaction_setup.app_context():
         transaction = StockTransaction.query.get(1)
         assert transaction.quantity == 123
-        StockTransaction.query.delete()
-        db.session.commit()
 
-def test_update_transaction_bad(stock_transaction_setup, app, client):
+def test_update_transaction_other_user(stock_transaction_setup, auth_app_user_2, client):
+    data_dict = stock_transaction_1.copy()
+    data_dict['id'] = 1
+    data_dict['transaction_type'] = data_dict['transaction_type'].value
+    data_dict['quantity'] = 123
+    response = client.put('/transaction/1', data=json.dumps(
+        data_dict
+    ))
+    with stock_transaction_setup.app_context():
+        transaction = StockTransaction.query.get(1)
+        assert transaction.quantity == stock_transaction_1['quantity']
+
+def test_update_transaction_bad(stock_transaction_setup, client):
     data_dict = stock_transaction_1.copy()
     data_dict['transaction_type'] = data_dict['transaction_type'].value
     data_dict['trade_fee'] = 'bad input'
@@ -90,12 +111,18 @@ def test_update_transaction_bad(stock_transaction_setup, app, client):
     response = client.post('/transaction/', data=json.dumps(
         data_dict
     ))
-    with app.app_context():
+    with stock_transaction_setup.app_context():
         transaction = StockTransaction.query.get(1)
         assert transaction.quantity == 100
 
-def test_delete_transaction(stock_transaction_setup, app, client):
+def test_delete_transaction(stock_transaction_setup, client):
     client.delete('transaction/1')
-    with app.app_context():
+    with stock_transaction_setup.app_context():
         transaction = StockTransaction.query.get(1)
         assert transaction == None
+
+def test_delete_transaction_other_user(stock_transaction_setup, auth_app_user_2, client):
+    client.delete('transaction/1')
+    with stock_transaction_setup.app_context():
+        transaction = StockTransaction.query.get(1)
+        assert transaction is not None
