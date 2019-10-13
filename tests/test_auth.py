@@ -31,9 +31,8 @@ def test_login_success(auth_setup, client):
             email = some_user_email,
             password = totally_secure_password
         ),
-        follow_redirects=True
+        follow_redirects=False
     )
-    assert response.status_code == 200
     with client.session_transaction() as sess:
         assert int(sess['user_id']) == 1
 

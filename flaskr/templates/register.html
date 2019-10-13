@@ -1,4 +1,7 @@
-<div class="registration-container">
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+{% endblock %}
+<div class="form-container">
     <form method="POST" action="{{ url_for('auth_bp.register') }}">
         {{ form.csrf_token }}
         <div class="form-group">

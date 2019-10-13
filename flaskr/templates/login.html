@@ -1,5 +1,7 @@
-
-<div class="login-container">
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+{% endblock %}
+<div class="form-container">
     <form method="POST" action="{{ url_for('auth_bp.login') }}">
         {{ form.csrf_token }}
         <div class="form-group">
