@@ -44,6 +44,7 @@ class StockTransaction(db.Model):
     cost_per_unit = db.Column(db.Integer, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     trade_fee = db.Column(db.Integer, nullable=False)
+    trade_date = db.Column(db.DateTime, nullable=False)
     account_id = db.Column(db.Integer,
                            db.ForeignKey('investment_account.id'))
     user_id = db.Column(db.Integer,
@@ -57,6 +58,7 @@ class StockTransaction(db.Model):
         yield ('cost_per_unit', self.cost_per_unit)
         yield ('quantity', self.quantity)
         yield ('trade_fee', self.trade_fee)
+        yield ('trade_date', self.trade_date.strftime('%Y-%m-%d'))
 
 
 class InvestmentAccount(db.Model):

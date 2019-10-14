@@ -1,3 +1,4 @@
+from datetime import date
 import json
 import pytest
 from flaskr import db
@@ -13,6 +14,7 @@ stock_transaction_1 = dict(
     cost_per_unit = 3141,
     quantity = 100,
     trade_fee = 999,
+    trade_date = date(2016, 4, 23),
     account_id = None,
     user_id = 1
 )
@@ -23,6 +25,7 @@ stock_transaction_2 = dict(
     cost_per_unit = 2601,
     quantity = 200,
     trade_fee = 999,
+    trade_date = date(2016, 8, 23),
     account_id = None,
     user_id = 1
 )
@@ -33,6 +36,7 @@ stock_transaction_3 = dict(
     cost_per_unit = 992,
     quantity = 500,
     trade_fee = 999,
+    trade_date = date(2016, 12, 9),
     account_id = None,
     user_id = 2
 )
@@ -96,6 +100,7 @@ def test_create_transaction(stock_transaction_setup, client):
         cost_per_unit = 2718,
         quantity = 200,
         trade_fee = 999,
+        trade_date = date(2016, 11, 11).isoformat(),
         account_id = None,
         user_id = 1
     )))
@@ -113,6 +118,7 @@ def test_create_transaction_bad(stock_transaction_setup, client):
         cost_per_unit = "asdf",
         quantity = 200,
         trade_fee = 999,
+        trade_date = date(2016, 11, 11).isoformat(),
         account_id = None,
         user_id = 1
     )))
@@ -127,6 +133,7 @@ def test_create_transaction_other_user(stock_transaction_setup,
         cost_per_unit = 2718,
         quantity = 200,
         trade_fee = 999,
+        trade_date = date(2016, 11, 11).isoformat(),
         account_id = None,
         user_id = 1
     )
@@ -135,12 +142,16 @@ def test_create_transaction_other_user(stock_transaction_setup,
     for k, v in json_data.items():
         if k == 'id':
             continue
+        if k == 'trade_date':
+            v = date.fromisoformat(v)
+            continue
         assert v == request_data[k]
 
 def test_update_transaction(stock_transaction_setup, client):
     data_dict = stock_transaction_1.copy()
     data_dict['id'] = 1
     data_dict['transaction_type'] = data_dict['transaction_type'].value
+    data_dict['trade_date'] = data_dict['trade_date'].isoformat()
     data_dict['quantity'] = 123
     response = client.put('/transaction/1', data=json.dumps(
         data_dict
@@ -153,6 +164,7 @@ def test_update_transaction_other_user(stock_transaction_setup, auth_app_user_2,
     data_dict = stock_transaction_1.copy()
     data_dict['id'] = 1
     data_dict['transaction_type'] = data_dict['transaction_type'].value
+    data_dict['trade_date'] = data_dict['trade_date'].isoformat()
     data_dict['quantity'] = 123
     response = client.put('/transaction/1', data=json.dumps(
         data_dict
@@ -165,6 +177,7 @@ def test_update_transaction_bad(stock_transaction_setup, client):
     data_dict = stock_transaction_1.copy()
     data_dict['transaction_type'] = data_dict['transaction_type'].value
     data_dict['trade_fee'] = 'bad input'
+    data_dict['trade_date'] = data_dict['trade_date'].isoformat()
     data_dict['quantity'] = 123
     response = client.post('/transaction/', data=json.dumps(
         data_dict

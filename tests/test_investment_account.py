@@ -1,3 +1,4 @@
+import datetime
 import json
 import pytest
 from flaskr import db
@@ -184,6 +185,7 @@ def test_delete_account_with_transactions(investment_account_setup, client):
             cost_per_unit = 2612,
             quantity = 600,
             trade_fee = 995,
+            trade_date = datetime.date(2016, 4, 26),
             account_id = 1,
             user_id = 1
         ))

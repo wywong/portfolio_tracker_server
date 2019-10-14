@@ -1,3 +1,4 @@
+from datetime import date
 from flask_login import login_required, current_user
 import json
 import logging
@@ -74,6 +75,7 @@ def deserialize_transaction(data):
     json_data = data.copy()
     transaction_type = StockTransactionType(json_data['transaction_type'])
     json_data['transaction_type'] = transaction_type
+    json_data['trade_date'] = date.fromisoformat(json_data['trade_date'])
     return json_data
 
 @stock_transactions.route('/<int:id>', methods=['DELETE'])
