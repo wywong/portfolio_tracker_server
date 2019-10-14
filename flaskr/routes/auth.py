@@ -1,7 +1,7 @@
-from flask_login import current_user, login_user
+from flask_login import current_user, login_user, login_required, logout_user
 from flaskr import db
 from flaskr.model import User
-from flask import Blueprint, flash, redirect, render_template, url_for
+from flask import Blueprint, flash, redirect, render_template, url_for, jsonify
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Email, EqualTo, Length
@@ -58,3 +58,14 @@ def register():
         flash('Thanks for registering')
         return redirect(url_for('auth_bp.login'))
     return render_template('register.html', form=form)
+
+@auth_bp.route("/logout", methods=['POST'])
+@login_required
+def logout():
+    logout_user()
+    return ""
+
+@auth_bp.route("/details", methods=['GET'])
+@login_required
+def user_details():
+    return jsonify(dict(User.query.get(int(current_user.id))))

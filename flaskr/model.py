@@ -18,6 +18,9 @@ class User(UserMixin, db.Model):
     accounts = db.relationship('InvestmentAccount')
     stock_transactions = db.relationship('StockTransaction')
 
+    def __iter__(self):
+        yield ('email', self.email)
+
     def __repr__(self):
         return '<User {}>'.format(self.id)
 
