@@ -27,6 +27,7 @@ def create_app(test_config=None):
             # load the test config if passed in
             app.config.from_mapping(test_config)
         db.init_app(app)
+        app.url_map.strict_slashes = False
 
         # add command line commands
         migrate = Migrate(app, db)
