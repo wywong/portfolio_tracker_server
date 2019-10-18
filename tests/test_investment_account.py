@@ -116,7 +116,7 @@ def test_get_account_transactions(account_with_transaction, client):
             user_id = 2
         ))
         db.session.commit()
-    response = client.get('/investment_account/2/transactions')
+    response = client.get('/investment_account/transactions?account_id=2')
     accounts = json.loads(response.data)
     assert len(accounts) == 1
     for k, v in accounts[0].items():
