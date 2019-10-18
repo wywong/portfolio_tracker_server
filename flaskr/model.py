@@ -59,6 +59,7 @@ class StockTransaction(db.Model):
         yield ('quantity', self.quantity)
         yield ('trade_fee', self.trade_fee)
         yield ('trade_date', self.trade_date.strftime('%Y-%m-%d'))
+        yield ('account_id', self.account_id)
 
 
 class InvestmentAccount(db.Model):
