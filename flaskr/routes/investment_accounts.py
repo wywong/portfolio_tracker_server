@@ -31,6 +31,15 @@ def get_all_investment_accounts():
         .all()
     return jsonify(list(map(dict, investment_accounts)))
 
+@investment_accounts.route('/<int:id>/transactions', methods=['GET'])
+@login_required
+def get_investment_account_transactions(id):
+    transactions = db.session.query(StockTransaction) \
+        .filter((StockTransaction.user_id == current_user.id) & \
+                (StockTransaction.account_id == id)) \
+        .all()
+    return jsonify(list(map(dict, transactions)))
+
 @investment_accounts.route('', methods=['POST'])
 @login_required
 def create_investment_account():

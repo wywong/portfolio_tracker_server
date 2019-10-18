@@ -42,6 +42,31 @@ def investment_account_setup(auth_app_user_1):
             InvestmentAccount.query.delete()
             db.session.commit()
 
+@pytest.fixture
+def account_with_transaction(investment_account_setup):
+    auth_app = investment_account_setup
+    try:
+        with auth_app.app_context():
+            db.session.add(StockTransaction(
+                transaction_type = StockTransactionType.buy,
+                stock_symbol = "XAW.TO",
+                cost_per_unit = 2612,
+                quantity = 600,
+                trade_fee = 995,
+                trade_date = datetime.date(2016, 4, 26),
+                account_id = 1,
+                user_id = 1
+            ))
+            db.session.commit()
+        yield auth_app
+    except Exception as e:
+        assert False
+    finally:
+        with auth_app.app_context():
+            StockTransaction.query.delete()
+            InvestmentAccount.query.delete()
+            db.session.commit()
+
 def test_get_non_existing_account(auth_app_user_1, client):
     response = client.get('/investment_account/999')
     assert response.data == b'null\n'
@@ -63,6 +88,41 @@ def test_get_existing_account(investment_account_setup, client):
     response = client.get('/investment_account/all')
     accounts = json.loads(response.data)
     assert len(accounts) == 2
+
+def test_get_account_transactions(account_with_transaction, client):
+    app = account_with_transaction
+    stock_2 = dict(
+        transaction_type = StockTransactionType.buy,
+        stock_symbol = "VCN.TO",
+        cost_per_unit = 3333,
+        quantity = 1600,
+        trade_fee = 995,
+        trade_date = datetime.date(2016, 4, 26),
+        account_id = 2,
+        user_id = 1
+    )
+    with app.app_context():
+        db.session.add(InvestmentAccount(**investment_account_2))
+        db.session.add(InvestmentAccount(**investment_account_3))
+        db.session.add(StockTransaction(**stock_2))
+        db.session.add(StockTransaction(
+            transaction_type = StockTransactionType.buy,
+            stock_symbol = "VCN.TO",
+            cost_per_unit = 3000,
+            quantity = 600,
+            trade_fee = 995,
+            trade_date = datetime.date(2016, 4, 26),
+            account_id = 3,
+            user_id = 2
+        ))
+        db.session.commit()
+    response = client.get('/investment_account/2/transactions')
+    accounts = json.loads(response.data)
+    assert len(accounts) == 1
+    for k, v in accounts[0].items():
+        if k == 'id':
+            continue
+        assert v == accounts[0][k]
 
 def test_create_account(investment_account_setup, client):
     request_data = dict(
@@ -177,8 +237,10 @@ def test_delete_account_other_user(investment_account_setup,
         account = InvestmentAccount.query.get(1)
         assert account is not None
 
-def test_delete_account_with_transactions(investment_account_setup, client):
-    with investment_account_setup.app_context():
+def test_delete_account_with_transactions(account_with_transaction,
+                                          client):
+    app = account_with_transaction
+    with app.app_context():
         db.session.add(StockTransaction(
             transaction_type = StockTransactionType.buy,
             stock_symbol = "XAW.TO",
@@ -192,7 +254,7 @@ def test_delete_account_with_transactions(investment_account_setup, client):
         db.session.commit()
     response = client.delete('/investment_account/1')
     assert json.loads(response.data) == None
-    with investment_account_setup.app_context():
+    with app.app_context():
         account = InvestmentAccount.query.get(1)
         assert account == None
         transaction = StockTransaction.query.get(1)
