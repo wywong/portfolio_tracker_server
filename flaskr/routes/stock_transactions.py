@@ -1,4 +1,3 @@
-from datetime import date
 from decimal import Decimal
 from flask_login import login_required, current_user
 import csv
@@ -7,7 +6,7 @@ import json
 import logging
 import traceback
 from flask import Blueprint, jsonify, request
-from flaskr import db, apply_user_id
+from flaskr import db
 from flaskr.model import (
     StockTransaction,
     StockTransactionType
@@ -40,10 +39,10 @@ def get_all_transaction():
 @login_required
 def create_transaction():
     try:
-        json_data = apply_user_id(json.loads(request.data))
+        json_data = json.loads(request.data)
         if 'id' in json_data:
             del json_data['id']
-        transaction = StockTransaction(**deserialize_transaction(json_data))
+        transaction = StockTransaction(**StockTransaction.deserialize(json_data))
         db.session.add(transaction)
         db.session.commit()
         return jsonify(dict(transaction))
@@ -57,28 +56,20 @@ def create_transaction():
 @login_required
 def update_transaction(id):
     try:
-        json_data = apply_user_id(json.loads(request.data))
-        update_data = deserialize_transaction(json_data)
-        if 'id' in update_data:
-            del update_data['id']
+        json_data = json.loads(request.data)
+        update_data = StockTransaction.deserialize(json_data)
+        update_data['id'] = id
         db.session.query(StockTransaction) \
             .filter((StockTransaction.id == id) & \
                     (StockTransaction.user_id == current_user.id)) \
             .update(update_data)
         db.session.commit()
-        return jsonify(json_data)
+        return jsonify(StockTransaction.serialize(update_data))
     except Exception as e:
         logging.error(e)
         logging.error(traceback.format_exc())
         db.session.rollback()
         return jsonify(None)
-
-def deserialize_transaction(data):
-    json_data = data.copy()
-    transaction_type = StockTransactionType(json_data['transaction_type'])
-    json_data['transaction_type'] = transaction_type
-    json_data['trade_date'] = date.fromisoformat(json_data['trade_date'])
-    return json_data
 
 @stock_transactions.route('/<int:id>', methods=['DELETE'])
 @login_required
@@ -122,8 +113,9 @@ def batch_create_transaction():
             for key, index in key_index_map.items():
                 value = row[index]
                 row_data[key] = value
+            row_data['account_id'] = account_id
             transactions.append(StockTransaction(
-                **prepare_row(row_data, account_id)
+                **StockTransaction.deserialize(row_data)
             ))
 
         db.session.bulk_save_objects(transactions)
@@ -134,14 +126,3 @@ def batch_create_transaction():
         logging.error(traceback.format_exc())
         db.session.rollback()
         return ''
-
-def prepare_row(data, account_id):
-    data['transaction_type'] = \
-        StockTransactionType[data['transaction_type'].lower()]
-    data['stock_symbol'] = data['stock_symbol'].upper()
-    data['cost_per_unit'] = int(Decimal(data['cost_per_unit']) * 100)
-    data['quantity'] = int(data['quantity'])
-    data['trade_fee'] = int(Decimal(data['trade_fee']) * 100)
-    data['account_id'] = account_id
-    data['user_id'] = current_user.id
-    return data

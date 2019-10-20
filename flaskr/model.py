@@ -1,6 +1,8 @@
 import enum
+from datetime import date
+from decimal import Decimal
 from flask_sqlalchemy import SQLAlchemy
-from flaskr import db, login_manager
+from flaskr import db, login_manager , apply_user_id
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -62,13 +64,37 @@ class StockTransaction(db.Model):
 
     def __iter__(self):
         yield ('id', self.id)
-        yield ('transaction_type', self.transaction_type.value)
+        yield ('transaction_type', self.transaction_type.name)
         yield ('stock_symbol', self.stock_symbol)
-        yield ('cost_per_unit', self.cost_per_unit)
+        yield ('cost_per_unit', str(Decimal(self.cost_per_unit) / 100))
         yield ('quantity', self.quantity)
-        yield ('trade_fee', self.trade_fee)
+        yield ('trade_fee', str(Decimal(self.trade_fee) / 100))
         yield ('trade_date', self.trade_date.strftime('%Y-%m-%d'))
         yield ('account_id', self.account_id)
+
+    @staticmethod
+    def serialize(data):
+        return dict(
+            id = data['id'],
+            transaction_type = data['transaction_type'].name,
+            stock_symbol = data['stock_symbol'].upper(),
+            cost_per_unit = str(Decimal(data['cost_per_unit']) / 100),
+            quantity = data['quantity'],
+            trade_fee = str(Decimal(data['trade_fee']) / 100),
+            trade_date = data['trade_date'].strftime('%Y-%m-%d'),
+            account_id = data['account_id']
+        )
+
+    @staticmethod
+    def deserialize(data):
+        data['transaction_type'] = \
+            StockTransactionType[data['transaction_type'].lower()]
+        data['stock_symbol'] = data['stock_symbol'].upper()
+        data['cost_per_unit'] = int(Decimal(data['cost_per_unit']) * 100)
+        data['quantity'] = int(data['quantity'])
+        data['trade_fee'] = int(Decimal(data['trade_fee']) * 100)
+        data['trade_date'] = date.fromisoformat(data['trade_date'])
+        return apply_user_id(data)
 
 
 class InvestmentAccount(db.Model):

@@ -64,11 +64,11 @@ def test_get_existing_transaction(stock_transaction_setup, client):
     response = client.get('/transaction/1')
     json_data = json.loads(response.data)
     assert json_data['id'] == 1
-    assert json_data['transaction_type'] == 0
+    assert json_data['transaction_type'] == 'buy'
     assert json_data['stock_symbol'] == 'VCN.TO'
-    assert json_data['cost_per_unit'] == 3141
+    assert json_data['cost_per_unit'] == "31.41"
     assert json_data['quantity'] == 100
-    assert json_data['trade_fee'] == 999
+    assert json_data['trade_fee'] == "9.99"
 
 def test_get_transaction_other_user(stock_transaction_setup, auth_app_user_2, client):
     response = client.get('/transaction/1')
@@ -95,29 +95,29 @@ def test_get_all_transactions(stock_transaction_setup, auth_app_user_2, client):
 
 def test_create_transaction(stock_transaction_setup, client):
     response = client.post('/transaction/', data=json.dumps(dict(
-        transaction_type = 1,
+        transaction_type = 'sell',
         stock_symbol = "XAW.TO",
-        cost_per_unit = 2718,
+        cost_per_unit = "27.18",
         quantity = 200,
-        trade_fee = 999,
+        trade_fee = "9.99",
         trade_date = date(2016, 11, 11).isoformat(),
         account_id = None,
         user_id = 1
     )))
     json_data = json.loads(response.data)
-    assert json_data['transaction_type'] == 1
+    assert json_data['transaction_type'] == 'sell'
     assert json_data['stock_symbol'] == 'XAW.TO'
-    assert json_data['cost_per_unit'] == 2718
+    assert json_data['cost_per_unit'] == "27.18"
     assert json_data['quantity'] == 200
-    assert json_data['trade_fee'] == 999
+    assert json_data['trade_fee'] == "9.99"
 
 def test_create_transaction_bad(stock_transaction_setup, client):
     response = client.post('/transaction/', data=json.dumps(dict(
-        transaction_type = 1,
+        transaction_type = 'sell',
         stock_symbol = "XAW.TO",
         cost_per_unit = "asdf",
         quantity = 200,
-        trade_fee = 999,
+        trade_fee = "9.99",
         trade_date = date(2016, 11, 11).isoformat(),
         account_id = None,
         user_id = 1
@@ -128,11 +128,11 @@ def test_create_transaction_other_user(stock_transaction_setup,
                                        auth_app_user_2,
                                        client):
     request_data = dict(
-        transaction_type = 1,
+        transaction_type = 'sell',
         stock_symbol = "XAW.TO",
-        cost_per_unit = 2718,
+        cost_per_unit = "27.18",
         quantity = 200,
-        trade_fee = 999,
+        trade_fee = "9.99",
         trade_date = date(2016, 11, 11).isoformat(),
         account_id = None,
         user_id = 1
@@ -150,7 +150,7 @@ def test_create_transaction_other_user(stock_transaction_setup,
 def test_update_transaction(stock_transaction_setup, client):
     data_dict = stock_transaction_1.copy()
     data_dict['id'] = 1
-    data_dict['transaction_type'] = data_dict['transaction_type'].value
+    data_dict['transaction_type'] = data_dict['transaction_type'].name
     data_dict['trade_date'] = data_dict['trade_date'].isoformat()
     data_dict['quantity'] = 123
     response = client.put('/transaction/1', data=json.dumps(
@@ -163,7 +163,7 @@ def test_update_transaction(stock_transaction_setup, client):
 def test_update_transaction_other_user(stock_transaction_setup, auth_app_user_2, client):
     data_dict = stock_transaction_1.copy()
     data_dict['id'] = 1
-    data_dict['transaction_type'] = data_dict['transaction_type'].value
+    data_dict['transaction_type'] = data_dict['transaction_type'].name
     data_dict['trade_date'] = data_dict['trade_date'].isoformat()
     data_dict['quantity'] = 123
     response = client.put('/transaction/1', data=json.dumps(
@@ -175,7 +175,7 @@ def test_update_transaction_other_user(stock_transaction_setup, auth_app_user_2,
 
 def test_update_transaction_bad(stock_transaction_setup, client):
     data_dict = stock_transaction_1.copy()
-    data_dict['transaction_type'] = data_dict['transaction_type'].value
+    data_dict['transaction_type'] = data_dict['transaction_type'].name
     data_dict['trade_fee'] = 'bad input'
     data_dict['trade_date'] = data_dict['trade_date'].isoformat()
     data_dict['quantity'] = 123
