@@ -1,10 +1,12 @@
 from flask_login import login_required, current_user
+from decimal import Decimal
 import json
 import logging
 import traceback
 from flask import Blueprint, jsonify, request
 from flaskr import db, apply_user_id
 from flaskr.model import InvestmentAccount, StockTransaction
+from sqlalchemy import func
 
 
 investment_accounts = Blueprint('investment_account_bp',
@@ -98,3 +100,22 @@ def delete_investment_account(id):
         logging.error(traceback.format_exc())
         db.session.rollback()
         return jsonify(None)
+
+@investment_accounts.route('/<int:id>/stats', methods=['GET'])
+@login_required
+def get_investment_account_stats(id):
+    return jsonify(dict(
+        book_cost = get_book_cost(id)
+    ))
+
+def get_book_cost(id):
+    book_cost = db.session.query(
+        func.sum(StockTransaction.cost_per_unit * StockTransaction.quantity + \
+                 StockTransaction.trade_fee) \
+            .filter((StockTransaction.account_id == id) & \
+                    (StockTransaction.user_id == current_user.id)) \
+    ).scalar()
+    if book_cost is None:
+        return "N/A"
+    return "$%s" % str(Decimal(book_cost) / 100)
+
