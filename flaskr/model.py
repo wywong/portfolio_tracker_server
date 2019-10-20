@@ -51,6 +51,15 @@ class StockTransaction(db.Model):
                         db.ForeignKey('portfolio_user.id'),
                         nullable=False)
 
+    DATA_KEYS = set([
+        'transaction_type',
+        'stock_symbol',
+        'cost_per_unit',
+        'quantity',
+        'trade_fee',
+        'trade_date'
+    ])
+
     def __iter__(self):
         yield ('id', self.id)
         yield ('transaction_type', self.transaction_type.value)

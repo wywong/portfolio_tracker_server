@@ -1,5 +1,8 @@
 from datetime import date
+from decimal import Decimal
 from flask_login import login_required, current_user
+import csv
+import io
 import json
 import logging
 import traceback
@@ -50,7 +53,6 @@ def create_transaction():
         db.session.rollback()
         return jsonify(None)
 
-
 @stock_transactions.route('/<int:id>', methods=['PUT'])
 @login_required
 def update_transaction(id):
@@ -93,3 +95,53 @@ def delete_transaction(id):
         logging.error(traceback.format_exc())
         db.session.rollback()
         return jsonify(None)
+
+@stock_transactions.route('/batch', methods=['POST'])
+@login_required
+def batch_create_transaction():
+    try:
+        if 'file' not in request.files:
+            return ''
+        account_id = None
+        if 'account_id' in request.form:
+            account_id = int(request.form['account_id'])
+        csv_file = request.files['file']
+        stream = io.StringIO(csv_file.stream.read().decode("utf8"),
+                             newline=None)
+        csv_iterator = csv.reader(stream)
+
+        keys = StockTransaction.DATA_KEYS
+        col_keys = csv_iterator.__next__()
+        key_index_map = {}
+        for index, col_key in enumerate(col_keys):
+            if col_key in keys:
+                key_index_map[col_key] = index
+        transactions = []
+        for row in csv_iterator:
+            row_data = {}
+            for key, index in key_index_map.items():
+                value = row[index]
+                row_data[key] = value
+            transactions.append(StockTransaction(
+                **prepare_row(row_data, account_id)
+            ))
+
+        db.session.bulk_save_objects(transactions)
+        db.session.commit()
+        return ''
+    except Exception as e:
+        logging.error(e)
+        logging.error(traceback.format_exc())
+        db.session.rollback()
+        return ''
+
+def prepare_row(data, account_id):
+    data['transaction_type'] = \
+        StockTransactionType[data['transaction_type'].lower()]
+    data['stock_symbol'] = data['stock_symbol'].upper()
+    data['cost_per_unit'] = int(Decimal(data['cost_per_unit']) * 100)
+    data['quantity'] = int(data['quantity'])
+    data['trade_fee'] = int(Decimal(data['trade_fee']) * 100)
+    data['account_id'] = account_id
+    data['user_id'] = current_user.id
+    return data
