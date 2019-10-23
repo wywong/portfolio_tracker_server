@@ -126,3 +126,27 @@ def batch_create_transaction():
         logging.error(traceback.format_exc())
         db.session.rollback()
         return ''
+
+@stock_transactions.route('/batch', methods=['PUT'])
+@login_required
+def batch_move_transaction():
+    try:
+        json_data = json.loads(request.data)
+        json_data.setdefault('new_account_id', None)
+        json_data.setdefault('transaction_ids', [])
+        account_id = json_data['new_account_id']
+        transaction_ids = json_data['transaction_ids']
+        x = db.session.query(StockTransaction) \
+            .filter((StockTransaction.id.in_(transaction_ids)) & \
+                    (StockTransaction.user_id == current_user.id)) \
+            .update({
+                StockTransaction.account_id: account_id
+            }, synchronize_session=False)
+
+        db.session.commit()
+        return ''
+    except Exception as e:
+        logging.error(e)
+        logging.error(traceback.format_exc())
+        db.session.rollback()
+        return ''
