@@ -16,6 +16,12 @@ investment_accounts = Blueprint('investment_account_bp',
 @investment_accounts.route('/<int:id>', methods=['GET'])
 @login_required
 def get_investment_account(id):
+    """
+    Returns json with the data for the specified investment account
+
+    Keyword arguments:
+    id -- the id of the investment account
+    """
     investment_account = db.session.query(InvestmentAccount) \
         .filter((InvestmentAccount.id == id) & \
                 (InvestmentAccount.user_id == current_user.id)) \
@@ -28,6 +34,9 @@ def get_investment_account(id):
 @investment_accounts.route('/all', methods=['GET'])
 @login_required
 def get_all_investment_accounts():
+    """
+    Returns an array of all investment accounts belonging to the current user
+    """
     investment_accounts = db.session.query(InvestmentAccount) \
         .filter(InvestmentAccount.user_id == current_user.id) \
         .all()
@@ -36,6 +45,10 @@ def get_all_investment_accounts():
 @investment_accounts.route('/transactions', methods=['GET'])
 @login_required
 def get_investment_account_transactions():
+    """
+    Returns the stock transactions that belong to the investment account with id
+    account_id
+    """
     id = request.args.get('account_id')
     transactions = db.session.query(StockTransaction) \
         .filter((StockTransaction.user_id == current_user.id) & \
@@ -63,6 +76,10 @@ def create_investment_account():
 @investment_accounts.route('/<int:id>', methods=['PUT'])
 @login_required
 def update_investment_account(id):
+    """
+    Updates the values of the investment account with the values provided in
+    request data
+    """
     try:
         json_data = apply_user_id(json.loads(request.data))
         if 'id' in json_data:
@@ -84,6 +101,9 @@ def update_investment_account(id):
 @investment_accounts.route('/<int:id>', methods=['DELETE'])
 @login_required
 def delete_investment_account(id):
+    """
+    Deletes the investment account with the provided id
+    """
     try:
         db.session.query(StockTransaction) \
             .filter((StockTransaction.account_id == id) & \
@@ -104,11 +124,18 @@ def delete_investment_account(id):
 @investment_accounts.route('/<int:id>/stats', methods=['GET'])
 @login_required
 def get_investment_account_stats(id):
+    """
+    Returns a json object with relevant values for the investment account
+    """
     return jsonify(dict(
         book_cost = get_book_cost(id)
     ))
 
 def get_book_cost(id):
+    """
+    Returns the computed book cost of all transactions in this account, if the
+    account has no tranasctions then N/A is returned.
+    """
     book_cost = db.session.query(
         func.sum(StockTransaction.cost_per_unit * StockTransaction.quantity + \
                  StockTransaction.trade_fee) \

@@ -18,6 +18,9 @@ stock_transactions = Blueprint('stock_transaction_bp', __name__, url_prefix="/tr
 @stock_transactions.route('/<int:id>', methods=['GET'])
 @login_required
 def get_transaction(id):
+    """
+    Returns json data for the stock transaction with the specified id
+    """
     stock_transaction = db.session.query(StockTransaction) \
             .filter((StockTransaction.id == id) & \
                     (StockTransaction.user_id == current_user.id)) \
@@ -30,6 +33,9 @@ def get_transaction(id):
 @stock_transactions.route('/all', methods=['GET'])
 @login_required
 def get_all_transaction():
+    """
+    Returns all stock transactions that belong to the current user
+    """
     stock_transactions = db.session.query(StockTransaction) \
             .filter(StockTransaction.user_id == current_user.id) \
             .all()
@@ -38,6 +44,11 @@ def get_all_transaction():
 @stock_transactions.route('/', methods=['POST'])
 @login_required
 def create_transaction():
+    """
+    Creates and returns a stock transaction with the data provided
+    If an id is provided it will be ignored. The server will provide the id for
+    the newly created transaction.
+    """
     try:
         json_data = json.loads(request.data)
         if 'id' in json_data:
@@ -55,6 +66,9 @@ def create_transaction():
 @stock_transactions.route('/<int:id>', methods=['PUT'])
 @login_required
 def update_transaction(id):
+    """
+    Updates the stock transaction with the values provided
+    """
     try:
         json_data = json.loads(request.data)
         update_data = StockTransaction.deserialize(json_data)
@@ -74,6 +88,9 @@ def update_transaction(id):
 @stock_transactions.route('/<int:id>', methods=['DELETE'])
 @login_required
 def delete_transaction(id):
+    """
+    Deletes the stock transaction with the specified id
+    """
     try:
         db.session.query(StockTransaction) \
             .filter((StockTransaction.id == id) & \
@@ -90,6 +107,12 @@ def delete_transaction(id):
 @stock_transactions.route('/batch', methods=['POST'])
 @login_required
 def batch_create_transaction():
+    """
+    Reads the relevant transaction data from the csv and creates the
+    transactions for the account provided. If no account id is provided then
+    these will be created for the user's unassigned transactions which has an
+    account_id of None
+    """
     try:
         if 'file' not in request.files:
             return ''
@@ -130,6 +153,9 @@ def batch_create_transaction():
 @stock_transactions.route('/batch', methods=['PUT'])
 @login_required
 def batch_move_transaction():
+    """
+    Batch reassigns the provided transactions' account_id to the new_account_id
+    """
     try:
         json_data = json.loads(request.data)
         json_data.setdefault('new_account_id', None)

@@ -15,10 +15,15 @@ def load_user(user_id):
 class User(UserMixin, db.Model):
     __tablename__ = "portfolio_user"
     id = db.Column(db.Integer, primary_key=True)
+    """User's id"""
     email = db.Column(db.String(128), index=True, unique=True, nullable=False)
+    """User's email"""
     password_hash = db.Column(db.String(128), nullable=False)
+    """User's hashed password"""
     accounts = db.relationship('InvestmentAccount')
+    """Accounts owned by the user"""
     stock_transactions = db.relationship('StockTransaction')
+    """StockTransactions beloning to the user"""
 
     def __iter__(self):
         yield ('email', self.email)
@@ -27,31 +32,54 @@ class User(UserMixin, db.Model):
         return '<User {}>'.format(self.id)
 
     def set_password(self, password):
+        """
+        Hashes the password and saves it as the user's password_hash
+
+        Keyword arguments:
+        password -- the user's password
+        """
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
+        """
+        Hashes the password and checks if it is equal to the user's password_hash
+
+        Keyword arguments:
+        password -- the user's password
+        """
         return check_password_hash(self.password_hash, password)
 
 
 class StockTransactionType(enum.Enum):
     buy = 0
+    """Buy transaction type"""
     sell = 1
+    """Sell transaction type"""
 
 
 class StockTransaction(db.Model):
     __tablename__ = "stock_transaction"
     id = db.Column(db.Integer, primary_key=True)
+    """StockTransaction's id"""
     transaction_type = db.Column(db.Enum(StockTransactionType), nullable=False)
+    """StockTransaction's transaction type"""
     stock_symbol = db.Column(db.String, nullable=False)
+    """StockTransaction's stock ticker symbol"""
     cost_per_unit = db.Column(db.Integer, nullable=False)
+    """StockTransaction's cost per unit of stock in cents"""
     quantity = db.Column(db.Integer, nullable=False)
+    """The quantity of the stock symbol in this stock transaction"""
     trade_fee = db.Column(db.Integer, nullable=False)
+    """StockTransaction's trade commission fee in cents"""
     trade_date = db.Column(db.DateTime, nullable=False)
+    """The date that this stock transaction occurred"""
     account_id = db.Column(db.Integer,
                            db.ForeignKey('investment_account.id'))
+    """The investment account's id that this stock transaction belongs to"""
     user_id = db.Column(db.Integer,
                         db.ForeignKey('portfolio_user.id'),
                         nullable=False)
+    """The id of the user that made this stock transaction"""
 
     DATA_KEYS = set([
         'transaction_type',
@@ -61,6 +89,7 @@ class StockTransaction(db.Model):
         'trade_fee',
         'trade_date'
     ])
+    """The names of the data fields that need to be serialized"""
 
     def __iter__(self):
         yield ('id', self.id)
@@ -74,6 +103,10 @@ class StockTransaction(db.Model):
 
     @staticmethod
     def serialize(data):
+        """
+        Returns a dict with the fields formatted in the way the client
+        expects them
+        """
         return dict(
             id = data['id'],
             transaction_type = data['transaction_type'].name,
@@ -87,6 +120,12 @@ class StockTransaction(db.Model):
 
     @staticmethod
     def deserialize(data):
+        """
+        Returns a dict with the fields formatt
+
+        Keyword arguments:
+        data -- a dict with the stock transaction fields in the client format
+        """
         data['transaction_type'] = \
             StockTransactionType[data['transaction_type'].lower()]
         data['stock_symbol'] = data['stock_symbol'].upper()
@@ -100,13 +139,19 @@ class StockTransaction(db.Model):
 class InvestmentAccount(db.Model):
     __tablename__ = "investment_account"
     id = db.Column(db.Integer, primary_key=True)
+    """InvestmentAccount's id"""
     name = db.Column(db.String, nullable=False)
+    """InvestmentAccount's given display name"""
     taxable = db.Column(db.Boolean, nullable=False)
+    """If true that means this investment account is a taxable account"""
     user_id = db.Column(db.Integer,
                         db.ForeignKey('portfolio_user.id'),
                         nullable=False)
+    """The id of the user that owns this investment account"""
     transactions = db.relationship('StockTransaction',
                                    backref="investment_account")
+    """The stock transactions that belong to this investment account"""
+
     def __iter__(self):
         yield ('id', self.id)
         yield ('name', self.name)
