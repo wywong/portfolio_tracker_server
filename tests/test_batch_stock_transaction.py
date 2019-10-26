@@ -158,3 +158,30 @@ def test_batch_move_transactions_other_user(one_account, auth_app_user_2, client
         transactions = StockTransaction.query.all()
         for transaction in transactions:
             assert transaction.account_id is None
+
+def test_batch_delete_transactions(one_account, client):
+    with one_account.app_context():
+        for i in range(0, 5):
+            db.session.add(StockTransaction(**stock_transaction_1))
+        db.session.commit()
+
+    response = client.delete('/transaction/batch', data=json.dumps(dict(
+        transaction_ids = [1, 2, 3, 5]
+    )))
+    with one_account.app_context():
+        transactions = StockTransaction.query.all()
+        assert len(transactions) == 1
+
+def test_batch_delete_transactions_other_user(one_account, auth_app_user_2, client):
+    with one_account.app_context():
+        for i in range(0, 5):
+            db.session.add(StockTransaction(**stock_transaction_1))
+        db.session.commit()
+
+    response = client.delete('/transaction/batch', data=json.dumps(dict(
+        transaction_ids = [1, 2, 3, 4, 5]
+    )))
+    with one_account.app_context():
+        transactions = StockTransaction.query.all()
+        assert len(transactions) == 5
+

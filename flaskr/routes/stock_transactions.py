@@ -162,13 +162,35 @@ def batch_move_transaction():
         json_data.setdefault('transaction_ids', [])
         account_id = json_data['new_account_id']
         transaction_ids = json_data['transaction_ids']
-        x = db.session.query(StockTransaction) \
+        db.session.query(StockTransaction) \
             .filter((StockTransaction.id.in_(transaction_ids)) & \
                     (StockTransaction.user_id == current_user.id)) \
             .update({
                 StockTransaction.account_id: account_id
             }, synchronize_session=False)
 
+        db.session.commit()
+        return ''
+    except Exception as e:
+        logging.error(e)
+        logging.error(traceback.format_exc())
+        db.session.rollback()
+        return ''
+
+@stock_transactions.route('/batch', methods=['DELETE'])
+@login_required
+def batch_delete_transaction():
+    """
+    Batch deletes the provided transactions'
+    """
+    try:
+        json_data = json.loads(request.data)
+        json_data.setdefault('transaction_ids', [])
+        transaction_ids = json_data['transaction_ids']
+        db.session.query(StockTransaction) \
+            .filter((StockTransaction.id.in_(transaction_ids)) & \
+                    (StockTransaction.user_id == current_user.id)) \
+            .delete(synchronize_session=False)
         db.session.commit()
         return ''
     except Exception as e:
