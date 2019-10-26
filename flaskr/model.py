@@ -63,7 +63,7 @@ class StockTransaction(db.Model):
     """StockTransaction's id"""
     transaction_type = db.Column(db.Enum(StockTransactionType), nullable=False)
     """StockTransaction's transaction type"""
-    stock_symbol = db.Column(db.String, nullable=False)
+    stock_symbol = db.Column(db.String(16), nullable=False)
     """StockTransaction's stock ticker symbol"""
     cost_per_unit = db.Column(db.Integer, nullable=False)
     """StockTransaction's cost per unit of stock in cents"""
@@ -156,3 +156,27 @@ class InvestmentAccount(db.Model):
         yield ('id', self.id)
         yield ('name', self.name)
         yield ('taxable', self.taxable)
+
+
+class StockMarker(db.Model):
+    __tablename__ = "stock_marker"
+    stock_symbol = db.Column(db.String(16), primary_key=True)
+    """Stock's stock ticker symbol and the id of StockMarker"""
+    exists = db.Column(db.Boolean, nullable=True)
+    """
+    if true then this stock symbol has pricing data
+    if false then this stock symbol has no pricing data
+    otherwise it is not known if this symbol has pricing data or not
+    """
+
+
+class StockPrice(db.Model):
+    __tablename__ = "stock_price"
+    id = db.Column(db.Integer, primary_key=True)
+    """The id of the StockPrice event"""
+    stock_symbol = db.Column(db.String(16), nullable=False)
+    """Stock's stock ticker symbol"""
+    price_date = db.Column(db.DateTime, nullable=False)
+    """The date the stock was this price"""
+    close_price = db.Column(db.Integer, nullable=False)
+    """The stock price in cents at market close"""
