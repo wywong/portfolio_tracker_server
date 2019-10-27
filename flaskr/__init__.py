@@ -6,6 +6,7 @@ from flask_login import LoginManager, current_user
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate, MigrateCommand
 import click
+import json
 import logging
 import traceback
 
@@ -82,6 +83,71 @@ def generate_markers():
             StockMarker(stock_symbol=r[0], exists=None) for r in stock_symbols
         ])
         db.session.commit()
+    except Exception as e:
+        logging.error(e)
+        logging.error(traceback.format_exc())
+        db.session.rollback()
+        raise e
+
+DAILY_KEY = 'Time Series (Daily)'
+CLOSE_KEY = '4. close'
+ERROR_KEY = 'Error Message'
+@stock_cli.command("fetch")
+@with_appcontext
+def fetch_prices():
+    """
+    Fetches stock prices for stocks that are known to have data or may have data
+    """
+    try:
+        from flaskr.model import StockPrice, StockMarker
+        from sqlalchemy import func, or_
+        from urllib import request
+        from urllib import parse
+        from datetime import date
+        from decimal import Decimal
+        import time
+        stock_symbols = \
+            db.session.query(StockMarker) \
+                .filter(or_(
+                    StockMarker.exists == None,
+                    StockMarker.exists == True
+                ))
+        api_key = os.environ['ALPHA_VANTAGE_API_KEY']
+
+        for stock_marker in stock_symbols.all():
+            stock_symbol = stock_marker.stock_symbol
+            params = parse.urlencode({
+                'symbol': stock_symbol,
+                'apikey': api_key,
+                'function': 'TIME_SERIES_DAILY',
+                'outputsize': 'compact'
+            })
+            url = 'https://www.alphavantage.co/query?%s' % params
+            with request.urlopen(url) as f:
+                json_data = json.loads(f.read().decode('utf-8'))
+                if ERROR_KEY in json_data:
+                    stock_marker.exists = False
+                    logging.error(json_data[ERROR_KEY])
+                    db.session.commit()
+                elif DAILY_KEY in json_data:
+                    stock_marker.exists = True
+                    prices = json_data[DAILY_KEY]
+                    StockPrice.query \
+                        .filter(StockPrice.stock_symbol == stock_symbol) \
+                        .delete()
+
+                    new_prices = []
+                    for key, price in prices.items():
+                        stock_price = StockPrice(
+                            stock_symbol = stock_symbol,
+                            price_date = date.fromisoformat(key),
+                            close_price = int(Decimal(price[CLOSE_KEY]) * 100)
+                        )
+                        new_prices.append(stock_price)
+                    db.session.bulk_save_objects(new_prices)
+                    db.session.commit()
+            time.sleep(15)
+
     except Exception as e:
         logging.error(e)
         logging.error(traceback.format_exc())

@@ -168,6 +168,7 @@ class StockMarker(db.Model):
     if false then this stock symbol has no pricing data
     otherwise it is not known if this symbol has pricing data or not
     """
+
     def __repr__(self):
         return '<StockMarker {}, {}>'.format(self.stock_symbol, self.exists)
 
@@ -182,3 +183,10 @@ class StockPrice(db.Model):
     """The date the stock was this price"""
     close_price = db.Column(db.Integer, nullable=False)
     """The stock price in cents at market close"""
+
+    def __repr__(self):
+        return '<StockPrice {}, {}, {}>'.format(
+            self.stock_symbol,
+            str(Decimal(self.close_price) / 100),
+            self.price_date.strftime('%Y-%m-%d')
+        )
