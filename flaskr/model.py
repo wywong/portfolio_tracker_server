@@ -168,6 +168,8 @@ class StockMarker(db.Model):
     if false then this stock symbol has no pricing data
     otherwise it is not known if this symbol has pricing data or not
     """
+    def __repr__(self):
+        return '<StockMarker {}, {}>'.format(self.stock_symbol, self.exists)
 
 
 class StockPrice(db.Model):
