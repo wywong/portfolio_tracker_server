@@ -55,6 +55,12 @@ class StockTransactionType(enum.Enum):
     """Buy transaction type"""
     sell = 1
     """Sell transaction type"""
+    dividend = 2
+    """Dividend transaction type"""
+    return_of_capital = 3
+    """Return of capital transaction type"""
+    reinvested_capital_distribution = 4
+    """Reinveted capital distributions transaction type"""
 
 
 class StockTransaction(db.Model):
