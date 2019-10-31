@@ -1,0 +1,4 @@
+transaction_type,stock_symbol,cost_per_unit,quantity,trade_fee,trade_date
+DIVIDEND,VCN.TO,0.26,500,9.95,2017-08-23
+Return of capital,VCN.TO,0.18,250,9.95,2017-08-23
+Reinvested capital distribution,VAB.TO,0.28,100,9.95,2010-12-23

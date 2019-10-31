@@ -60,7 +60,7 @@ class StockTransactionType(enum.Enum):
     return_of_capital = 3
     """Return of capital transaction type"""
     reinvested_capital_distribution = 4
-    """Reinveted capital distributions transaction type"""
+    """Reinvested capital distributions transaction type"""
 
 
 class StockTransaction(db.Model):
@@ -132,8 +132,8 @@ class StockTransaction(db.Model):
         Keyword arguments:
         data -- a dict with the stock transaction fields in the client format
         """
-        data['transaction_type'] = \
-            StockTransactionType[data['transaction_type'].lower()]
+        transaction_key = data['transaction_type'].replace(' ', '_').lower()
+        data['transaction_type'] = StockTransactionType[transaction_key]
         data['stock_symbol'] = data['stock_symbol'].upper()
         data['cost_per_unit'] = int(Decimal(data['cost_per_unit']) * 100)
         data['quantity'] = int(data['quantity'])

@@ -26,6 +26,7 @@ stock_transaction_1 = dict(
 )
 
 good_transactions_filename = 'tests/resources/transaction_good.csv'
+other_transactions_filename = 'tests/resources/transaction_other_types.csv'
 bad_transactions_filename = 'tests/resources/transaction_bad.csv'
 
 @pytest.fixture
@@ -68,10 +69,9 @@ def test_batch_create_transactions(one_account, client):
             assert transaction.account_id == None
             assert transaction.user_id == 1
 
-
-def test_batch_create_transactions_account(one_account, client):
+def test_batch_create_transactions(one_account, client):
     with open(good_transactions_filename, 'rb') as csv_file:
-        data = { 'account_id': 1 }
+        data = {}
         data['file'] = (csv_file, csv_file.name)
         response = client.post('/transaction/batch',
                                data=data,
@@ -89,6 +89,28 @@ def test_batch_create_transactions_account(one_account, client):
         assert transactions[1].transaction_type == StockTransactionType.buy
         assert transactions[2].transaction_type == StockTransactionType.sell
         assert transactions[3].transaction_type == StockTransactionType.buy
+        for transaction in transactions:
+            assert transaction.account_id == None
+            assert transaction.user_id == 1
+
+def test_batch_create_transactions_account(one_account, client):
+    with open(other_transactions_filename, 'rb') as csv_file:
+        data = { 'account_id': 1 }
+        data['file'] = (csv_file, csv_file.name)
+        response = client.post('/transaction/batch',
+                               data=data,
+                               content_type='multipart/form-data')
+
+    with one_account.app_context():
+        transactions = StockTransaction.query.all()
+        assert len(transactions) == 3
+        div = transactions[0]
+        roc = transactions[1]
+        rcd = transactions[2]
+        assert div.transaction_type == StockTransactionType.dividend
+        assert roc.transaction_type == StockTransactionType.return_of_capital
+        assert rcd.transaction_type == \
+            StockTransactionType.reinvested_capital_distribution
         for transaction in transactions:
             assert transaction.account_id == 1
             assert transaction.user_id == 1
