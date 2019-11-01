@@ -5,7 +5,12 @@ import logging
 import traceback
 from flask import Blueprint, jsonify, request
 from flaskr import db, apply_user_id
-from flaskr.model import InvestmentAccount, StockTransaction
+from flaskr.model import (
+    InvestmentAccount,
+    StockTransaction,
+    StockTransactionType,
+    StockPrice
+)
 from sqlalchemy import func
 
 
@@ -128,7 +133,8 @@ def get_investment_account_stats(id):
     Returns a json object with relevant values for the investment account
     """
     return jsonify(dict(
-        book_cost = get_book_cost(id)
+        book_cost = get_book_cost(id),
+        market_value = get_investment_account_market_price(id)
     ))
 
 def get_book_cost(id):
@@ -146,3 +152,33 @@ def get_book_cost(id):
         return "N/A"
     return "$%s" % str(Decimal(book_cost) / 100)
 
+def get_investment_account_market_price(id):
+    """
+    Returns the market value of all the stocks in the portfolio
+    """
+    last_date = db.session.query(
+        func.max(StockPrice.price_date).label('latest_price_date')
+    ).subquery('last_date')
+    price_query = db.session.query(
+        StockPrice.stock_symbol,
+        StockPrice.close_price.label('close_price')
+    ).filter(
+        StockPrice.price_date == last_date.c.latest_price_date
+    ).subquery('price_query')
+
+    stock_values = db.session.query(
+        StockTransaction.stock_symbol,
+        func.sum(price_query.c.close_price * StockTransaction.quantity)
+    ).filter((StockTransaction.account_id == id) & \
+             (StockTransaction.transaction_type == StockTransactionType.buy) & \
+             (StockTransaction.user_id == current_user.id)) \
+        .join(price_query, StockTransaction.stock_symbol == \
+              price_query.c.stock_symbol) \
+        .group_by(StockTransaction.stock_symbol)
+    total_value = 0
+    for row in stock_values:
+        total_value += row[1]
+    return format_currency(total_value)
+
+def format_currency(value):
+    return "$%0.2f" % (Decimal(value) / 100)
