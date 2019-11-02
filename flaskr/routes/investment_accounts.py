@@ -167,17 +167,23 @@ def get_investment_account_market_price(id):
     ).subquery('price_query')
 
     stock_values = db.session.query(
+        func.sum(StockTransaction.quantity),
+        func.min(price_query.c.close_price),
         StockTransaction.stock_symbol,
-        func.sum(price_query.c.close_price * StockTransaction.quantity)
+        StockTransaction.transaction_type
     ).filter((StockTransaction.account_id == id) & \
-             (StockTransaction.transaction_type == StockTransactionType.buy) & \
              (StockTransaction.user_id == current_user.id)) \
         .join(price_query, StockTransaction.stock_symbol == \
               price_query.c.stock_symbol) \
-        .group_by(StockTransaction.stock_symbol)
+        .group_by(StockTransaction.stock_symbol) \
+        .group_by(StockTransaction.transaction_type)
     total_value = 0
     for row in stock_values:
-        total_value += row[1]
+        if row[3] == StockTransactionType.buy:
+            total_value += row[0] * row[1]
+        elif row[3] == StockTransactionType.sell:
+            total_value -= row[0] * row[1]
+
     return format_currency(total_value)
 
 def format_currency(value):

@@ -104,8 +104,20 @@ def test_get_account_with_one_transaction_market_value(investment_account_setup,
 
 def test_get_account_no_transactions_market_value(investment_account_setup, client):
     app = investment_account_setup
-    with app.app_context():
-        db.session.commit()
     response = client.get('/investment_account/1/stats')
     json_data = json.loads(response.data)
     assert json_data['market_value'] == "$0.00"
+
+def test_get_account_buy_sell_market_value(investment_account_setup, client):
+    app = investment_account_setup
+    with app.app_context():
+        db.session.add(StockTransaction(**stock_transaction_1))
+        sell_transaction = stock_transaction_1.copy()
+        sell_transaction['quantity'] = 50
+        sell_transaction['transaction_type'] = StockTransactionType.sell
+        sell_transaction['trade_date'] = date(2016, 4, 28)
+        db.session.add(StockTransaction(**sell_transaction))
+        db.session.commit()
+    response = client.get('/investment_account/1/stats')
+    json_data = json.loads(response.data)
+    assert json_data['market_value'] == "$1656.00"
