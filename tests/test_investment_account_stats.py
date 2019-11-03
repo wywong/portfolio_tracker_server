@@ -100,13 +100,17 @@ def test_get_account_with_one_transaction_market_value(investment_account_setup,
         db.session.commit()
     response = client.get('/investment_account/1/stats')
     json_data = json.loads(response.data)
-    assert json_data['market_value'] == "$3312.00"
+    assert json_data['market_value']['total'] == "$3312.00"
+    breakdown = json_data['market_value']['breakdown']
+    assert breakdown['VCN.TO'] == "$3312.00"
 
 def test_get_account_no_transactions_market_value(investment_account_setup, client):
     app = investment_account_setup
     response = client.get('/investment_account/1/stats')
+    logging.error(response.data)
     json_data = json.loads(response.data)
-    assert json_data['market_value'] == "$0.00"
+    assert json_data['market_value']['total'] == "$0.00"
+    assert len(json_data['market_value']['breakdown']) == 0
 
 def test_get_account_buy_sell_market_value(investment_account_setup, client):
     app = investment_account_setup
@@ -120,4 +124,20 @@ def test_get_account_buy_sell_market_value(investment_account_setup, client):
         db.session.commit()
     response = client.get('/investment_account/1/stats')
     json_data = json.loads(response.data)
-    assert json_data['market_value'] == "$1656.00"
+    assert json_data['market_value']['total'] == "$1656.00"
+    breakdown = json_data['market_value']['breakdown']
+    assert breakdown['VCN.TO'] == "$1656.00"
+
+def test_get_account_with_multi_stock_market_value(investment_account_setup, client):
+    app = investment_account_setup
+    with app.app_context():
+        db.session.add(StockTransaction(**stock_transaction_1))
+        db.session.add(StockTransaction(**stock_transaction_2))
+        db.session.commit()
+    response = client.get('/investment_account/1/stats')
+    json_data = json.loads(response.data)
+    assert json_data['market_value']['total'] == "$8508.00"
+    breakdown = json_data['market_value']['breakdown']
+    assert len(breakdown) == 2
+    assert breakdown['VCN.TO'] == "$3312.00"
+    assert breakdown['VAB.TO'] == "$5196.00"

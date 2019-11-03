@@ -178,13 +178,25 @@ def get_investment_account_market_price(id):
         .group_by(StockTransaction.stock_symbol) \
         .group_by(StockTransaction.transaction_type)
     total_value = 0
+    breakdown = {}
     for row in stock_values:
-        if row[3] == StockTransactionType.buy:
-            total_value += row[0] * row[1]
-        elif row[3] == StockTransactionType.sell:
-            total_value -= row[0] * row[1]
+        value = row[0] * row[1]
+        stock_symbol = row[2]
+        transaction_type = row[3]
+        breakdown.setdefault(stock_symbol, 0)
+        if transaction_type == StockTransactionType.buy:
+            total_value += value
+            breakdown[stock_symbol] += value
+        elif transaction_type == StockTransactionType.sell:
+            total_value -= value
+            breakdown[stock_symbol] -= value
 
-    return format_currency(total_value)
+    return dict(
+        total = format_currency(total_value),
+        breakdown = dict(
+            map(lambda kv: (kv[0], format_currency(kv[1])), breakdown.items())
+        )
+    )
 
 def format_currency(value):
     return "$%0.2f" % (Decimal(value) / 100)
