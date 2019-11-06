@@ -81,7 +81,7 @@ def test_get_account_with_one_transaction_book_value(investment_account_setup, c
         db.session.commit()
     response = client.get('/investment_account/1/stats')
     json_data = json.loads(response.data)
-    assert json_data['book_cost'] == "$3150.99"
+    assert json_data['book_cost'] == "$3,150.99"
 
 def test_get_account_with_two_transaction_book_value(investment_account_setup, client):
     app = investment_account_setup
@@ -91,7 +91,7 @@ def test_get_account_with_two_transaction_book_value(investment_account_setup, c
         db.session.commit()
     response = client.get('/investment_account/1/stats')
     json_data = json.loads(response.data)
-    assert json_data['book_cost'] == "$8362.98"
+    assert json_data['book_cost'] == "$8,362.98"
 
 def test_get_account_with_one_transaction_market_value(investment_account_setup, client):
     app = investment_account_setup
@@ -100,9 +100,9 @@ def test_get_account_with_one_transaction_market_value(investment_account_setup,
         db.session.commit()
     response = client.get('/investment_account/1/stats')
     json_data = json.loads(response.data)
-    assert json_data['market_value']['total'] == "$3312.00"
+    assert json_data['market_value']['total'] == "$3,312.00"
     breakdown = json_data['market_value']['breakdown']
-    assert breakdown['VCN.TO'] == "$3312.00"
+    assert breakdown['VCN.TO'] == "$3,312.00"
 
 def test_get_account_no_transactions_market_value(investment_account_setup, client):
     app = investment_account_setup
@@ -124,9 +124,9 @@ def test_get_account_buy_sell_market_value(investment_account_setup, client):
         db.session.commit()
     response = client.get('/investment_account/1/stats')
     json_data = json.loads(response.data)
-    assert json_data['market_value']['total'] == "$1656.00"
+    assert json_data['market_value']['total'] == "$1,656.00"
     breakdown = json_data['market_value']['breakdown']
-    assert breakdown['VCN.TO'] == "$1656.00"
+    assert breakdown['VCN.TO'] == "$1,656.00"
 
 def test_get_account_with_multi_stock_market_value(investment_account_setup, client):
     app = investment_account_setup
@@ -136,8 +136,37 @@ def test_get_account_with_multi_stock_market_value(investment_account_setup, cli
         db.session.commit()
     response = client.get('/investment_account/1/stats')
     json_data = json.loads(response.data)
-    assert json_data['market_value']['total'] == "$8508.00"
+    assert json_data['market_value']['total'] == "$8,508.00"
     breakdown = json_data['market_value']['breakdown']
     assert len(breakdown) == 2
-    assert breakdown['VCN.TO'] == "$3312.00"
-    assert breakdown['VAB.TO'] == "$5196.00"
+    assert breakdown['VCN.TO'] == "$3,312.00"
+    assert breakdown['VAB.TO'] == "$5,196.00"
+
+def test_get_account_with_missing_stock_market_value(investment_account_setup, client):
+    app = investment_account_setup
+    with app.app_context():
+        db.session.add(StockTransaction(**stock_transaction_1))
+        vsb = stock_transaction_2.copy()
+        vsb['stock_symbol'] = "VSB.TO"
+        db.session.add(StockTransaction(**vsb))
+        db.session.commit()
+    response = client.get('/investment_account/1/stats')
+    json_data = json.loads(response.data)
+    assert json_data['market_value']['total'] == "$3,312.00"
+    breakdown = json_data['market_value']['breakdown']
+    assert len(breakdown) == 1
+    assert breakdown['VCN.TO'] == "$3,312.00"
+
+def test_get_account_with_large_market_value(investment_account_setup, client):
+    app = investment_account_setup
+    with app.app_context():
+        large = stock_transaction_1.copy()
+        large['quantity'] = 123456
+        db.session.add(StockTransaction(**large))
+        db.session.commit()
+    response = client.get('/investment_account/1/stats')
+    json_data = json.loads(response.data)
+    assert json_data['market_value']['total'] == "$4,088,862.72"
+    breakdown = json_data['market_value']['breakdown']
+    assert len(breakdown) == 1
+    assert breakdown['VCN.TO'] == "$4,088,862.72"
