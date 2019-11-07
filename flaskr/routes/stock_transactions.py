@@ -5,7 +5,7 @@ import io
 import json
 import logging
 import traceback
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, make_response
 from flaskr import db
 from flaskr.model import (
     StockTransaction,
@@ -104,7 +104,30 @@ def delete_transaction(id):
         db.session.rollback()
         return jsonify(None)
 
-@stock_transactions.route('/batch', methods=['POST'])
+@stock_transactions.route('/export', methods=['GET'])
+@login_required
+def export_transactions():
+    """
+    Exports all the user's user's transactions
+    """
+    stock_transactions_query = db.session.query(StockTransaction) \
+            .filter(StockTransaction.user_id == current_user.id)
+
+    csv_stream = io.StringIO()
+    csv_writer = csv.writer(csv_stream)
+    csv_writer.writerow(StockTransaction.DATA_KEYS)
+    for transaction in stock_transactions_query.all():
+        transaction_fields = dict(transaction)
+        row = []
+        for key in StockTransaction.DATA_KEYS:
+            row.append(transaction_fields[key])
+        csv_writer.writerow(row)
+    output = make_response(csv_stream.getvalue())
+    output.headers["Content-Disposition"] = "attachment; filename=export.csv"
+    output.headers["Content-type"] = "text/csv"
+    return output
+
+@stock_transactions.route('/import', methods=['POST'])
 @login_required
 def batch_create_transaction():
     """
@@ -150,7 +173,7 @@ def batch_create_transaction():
         db.session.rollback()
         return ''
 
-@stock_transactions.route('/batch', methods=['PUT'])
+@stock_transactions.route('/move', methods=['PUT'])
 @login_required
 def batch_move_transaction():
     """

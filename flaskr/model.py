@@ -87,14 +87,14 @@ class StockTransaction(db.Model):
                         nullable=False)
     """The id of the user that made this stock transaction"""
 
-    DATA_KEYS = set([
+    DATA_KEYS = [
         'transaction_type',
         'stock_symbol',
         'cost_per_unit',
         'quantity',
         'trade_fee',
         'trade_date'
-    ])
+    ]
     """The names of the data fields that need to be serialized"""
 
     def __iter__(self):
