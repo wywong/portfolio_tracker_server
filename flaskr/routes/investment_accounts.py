@@ -174,9 +174,7 @@ def get_investment_account_market_price(id):
 
     return dict(
         total = format_currency(total_value),
-        breakdown = dict(
-            map(lambda kv: (kv[0], format_currency(kv[1])), breakdown.items())
-        )
+        breakdown = build_stock_market_values(breakdown, total_value)
     )
 
 def build_market_price_query(id):
@@ -202,5 +200,17 @@ def build_market_price_query(id):
         .group_by(StockTransaction.stock_symbol) \
         .group_by(StockTransaction.transaction_type)
 
+def build_stock_market_values(breakdown, total_value):
+    values = {}
+    for kv in breakdown.items():
+        values[kv[0]] = dict(
+            value = format_currency(kv[1]),
+            percent = format_percentage(kv[1], total_value)
+        )
+    return values
+
 def format_currency(value):
     return "$%s.%02d" % ("{:,}".format(value // 100), value % 100)
+
+def format_percentage(numerator, denominator):
+    return "%.1f%%" % (float(numerator) / denominator * 100)

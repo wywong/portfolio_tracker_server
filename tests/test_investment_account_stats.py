@@ -102,7 +102,8 @@ def test_get_account_with_one_transaction_market_value(investment_account_setup,
     json_data = json.loads(response.data)
     assert json_data['market_value']['total'] == "$3,312.00"
     breakdown = json_data['market_value']['breakdown']
-    assert breakdown['VCN.TO'] == "$3,312.00"
+    assert breakdown['VCN.TO']['value'] == "$3,312.00"
+    assert breakdown['VCN.TO']['percent'] == '100.0%'
 
 def test_get_account_no_transactions_market_value(investment_account_setup, client):
     app = investment_account_setup
@@ -126,7 +127,8 @@ def test_get_account_buy_sell_market_value(investment_account_setup, client):
     json_data = json.loads(response.data)
     assert json_data['market_value']['total'] == "$1,656.00"
     breakdown = json_data['market_value']['breakdown']
-    assert breakdown['VCN.TO'] == "$1,656.00"
+    assert breakdown['VCN.TO']['value'] == "$1,656.00"
+    assert breakdown['VCN.TO']['percent'] == '100.0%'
 
 def test_get_account_with_multi_stock_market_value(investment_account_setup, client):
     app = investment_account_setup
@@ -139,8 +141,10 @@ def test_get_account_with_multi_stock_market_value(investment_account_setup, cli
     assert json_data['market_value']['total'] == "$8,508.00"
     breakdown = json_data['market_value']['breakdown']
     assert len(breakdown) == 2
-    assert breakdown['VCN.TO'] == "$3,312.00"
-    assert breakdown['VAB.TO'] == "$5,196.00"
+    assert breakdown['VCN.TO']['value'] == "$3,312.00"
+    assert breakdown['VAB.TO']['value'] == "$5,196.00"
+    assert breakdown['VCN.TO']['percent'] == '38.9%'
+    assert breakdown['VAB.TO']['percent'] == '61.1%'
 
 def test_get_account_with_missing_stock_market_value(investment_account_setup, client):
     app = investment_account_setup
@@ -155,7 +159,8 @@ def test_get_account_with_missing_stock_market_value(investment_account_setup, c
     assert json_data['market_value']['total'] == "$3,312.00"
     breakdown = json_data['market_value']['breakdown']
     assert len(breakdown) == 1
-    assert breakdown['VCN.TO'] == "$3,312.00"
+    assert breakdown['VCN.TO']['value'] == "$3,312.00"
+    assert breakdown['VCN.TO']['percent'] == '100.0%'
 
 def test_get_account_with_large_market_value(investment_account_setup, client):
     app = investment_account_setup
@@ -169,4 +174,5 @@ def test_get_account_with_large_market_value(investment_account_setup, client):
     assert json_data['market_value']['total'] == "$4,088,862.72"
     breakdown = json_data['market_value']['breakdown']
     assert len(breakdown) == 1
-    assert breakdown['VCN.TO'] == "$4,088,862.72"
+    assert breakdown['VCN.TO']['value'] == "$4,088,862.72"
+    assert breakdown['VCN.TO']['percent'] == '100.0%'
