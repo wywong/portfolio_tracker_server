@@ -204,7 +204,8 @@ def build_stock_market_values(breakdown, total_value):
     values = {}
     for kv in breakdown.items():
         values[kv[0]] = dict(
-            value = format_currency(kv[1]),
+            formatted_value = format_currency(kv[1]),
+            raw_percent = kv[1],
             percent = format_percentage(kv[1], total_value)
         )
     return values
