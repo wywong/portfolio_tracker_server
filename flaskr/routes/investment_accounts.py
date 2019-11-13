@@ -1,15 +1,14 @@
 from flask_login import login_required, current_user
-from decimal import Decimal
 import json
 import logging
 import traceback
 from flask import Blueprint, jsonify, request
 from flaskr import db, apply_user_id
+from flaskr.generators.market_value import MarketValueGenerator
+from flaskr.utils.formatting_utils import FormattingUtils
 from flaskr.model import (
     InvestmentAccount,
-    StockTransaction,
-    StockTransactionType,
-    StockPrice
+    StockTransaction
 )
 from sqlalchemy import func
 
@@ -150,68 +149,11 @@ def get_book_cost(id):
     ).scalar()
     if book_cost is None:
         return "N/A"
-    return format_currency(book_cost)
+    return FormattingUtils.format_currency(book_cost)
 
 def get_investment_account_market_price(id):
     """
     Returns the market value of all the stocks in the portfolio
     """
-    total_value = 0
-    breakdown = {}
-    stock_values = build_market_price_query(id)
-    for row in stock_values:
-        logging.error(row)
-        value = row[0] * row[1]
-        stock_symbol = row[2]
-        transaction_type = row[3]
-        breakdown.setdefault(stock_symbol, 0)
-        if transaction_type == StockTransactionType.buy:
-            total_value += value
-            breakdown[stock_symbol] += value
-        elif transaction_type == StockTransactionType.sell:
-            total_value -= value
-            breakdown[stock_symbol] -= value
-
-    return dict(
-        total = format_currency(total_value),
-        breakdown = build_stock_market_values(breakdown, total_value)
-    )
-
-def build_market_price_query(id):
-    last_date = db.session.query(
-        func.max(StockPrice.price_date).label('latest_price_date')
-    ).subquery('last_date')
-    price_query = db.session.query(
-        StockPrice.stock_symbol,
-        StockPrice.close_price.label('close_price')
-    ).filter(
-        StockPrice.price_date == last_date.c.latest_price_date
-    ).subquery('price_query')
-
-    return db.session.query(
-        func.sum(StockTransaction.quantity),
-        func.min(price_query.c.close_price),
-        StockTransaction.stock_symbol,
-        StockTransaction.transaction_type
-    ).filter((StockTransaction.account_id == id) & \
-             (StockTransaction.user_id == current_user.id)) \
-        .join(price_query, StockTransaction.stock_symbol == \
-              price_query.c.stock_symbol) \
-        .group_by(StockTransaction.stock_symbol) \
-        .group_by(StockTransaction.transaction_type)
-
-def build_stock_market_values(breakdown, total_value):
-    values = {}
-    for kv in breakdown.items():
-        values[kv[0]] = dict(
-            formatted_value = format_currency(kv[1]),
-            raw_percent = kv[1],
-            percent = format_percentage(kv[1], total_value)
-        )
-    return values
-
-def format_currency(value):
-    return "$%s.%02d" % ("{:,}".format(value // 100), value % 100)
-
-def format_percentage(numerator, denominator):
-    return "%.1f%%" % (float(numerator) / denominator * 100)
+    generator = MarketValueGenerator(current_user.id, id)
+    return generator.next()

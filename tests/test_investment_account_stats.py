@@ -74,7 +74,7 @@ def test_get_empty_account_book_value(investment_account_setup, client):
     json_data = json.loads(response.data)
     assert json_data['book_cost'] == "N/A"
 
-def test_get_account_with_one_transaction_book_value(investment_account_setup, client):
+def test_stats_one_transaction_book_value(investment_account_setup, client):
     app = investment_account_setup
     with app.app_context():
         db.session.add(StockTransaction(**stock_transaction_1))
@@ -83,7 +83,8 @@ def test_get_account_with_one_transaction_book_value(investment_account_setup, c
     json_data = json.loads(response.data)
     assert json_data['book_cost'] == "$3,150.99"
 
-def test_get_account_with_two_transaction_book_value(investment_account_setup, client):
+def test_stats_two_transaction_book_value(investment_account_setup,
+                                          client):
     app = investment_account_setup
     with app.app_context():
         db.session.add(StockTransaction(**stock_transaction_1))
@@ -93,7 +94,8 @@ def test_get_account_with_two_transaction_book_value(investment_account_setup, c
     json_data = json.loads(response.data)
     assert json_data['book_cost'] == "$8,362.98"
 
-def test_get_account_with_one_transaction_market_value(investment_account_setup, client):
+def test_stats_one_transaction_market_value(investment_account_setup,
+                                            client):
     app = investment_account_setup
     with app.app_context():
         db.session.add(StockTransaction(**stock_transaction_1))
@@ -105,7 +107,21 @@ def test_get_account_with_one_transaction_market_value(investment_account_setup,
     assert breakdown['VCN.TO']["formatted_value"] == "$3,312.00"
     assert breakdown['VCN.TO']['percent'] == '100.0%'
 
-def test_get_account_no_transactions_market_value(investment_account_setup, client):
+def test_stats_one_transaction_market_value_other_user(investment_account_setup,
+                                                       auth_app_user_2,
+                                                       client):
+    app = investment_account_setup
+    with app.app_context():
+        db.session.add(StockTransaction(**stock_transaction_1))
+        db.session.commit()
+    response = client.get('/investment_account/1/stats')
+    json_data = json.loads(response.data)
+    assert json_data['market_value']['total'] == "$0.00"
+    breakdown = json_data['market_value']['breakdown']
+    assert len(breakdown) == 0
+
+def test_get_account_no_transactions_market_value(investment_account_setup,
+                                                  client):
     app = investment_account_setup
     response = client.get('/investment_account/1/stats')
     logging.error(response.data)
@@ -113,7 +129,8 @@ def test_get_account_no_transactions_market_value(investment_account_setup, clie
     assert json_data['market_value']['total'] == "$0.00"
     assert len(json_data['market_value']['breakdown']) == 0
 
-def test_get_account_buy_sell_market_value(investment_account_setup, client):
+def test_get_account_buy_sell_market_value(investment_account_setup,
+                                           client):
     app = investment_account_setup
     with app.app_context():
         db.session.add(StockTransaction(**stock_transaction_1))
@@ -130,7 +147,8 @@ def test_get_account_buy_sell_market_value(investment_account_setup, client):
     assert breakdown['VCN.TO']["formatted_value"] == "$1,656.00"
     assert breakdown['VCN.TO']['percent'] == '100.0%'
 
-def test_get_account_with_multi_stock_market_value(investment_account_setup, client):
+def test_stats_multi_stock_market_value(investment_account_setup,
+                                                client):
     app = investment_account_setup
     with app.app_context():
         db.session.add(StockTransaction(**stock_transaction_1))
@@ -146,7 +164,8 @@ def test_get_account_with_multi_stock_market_value(investment_account_setup, cli
     assert breakdown['VCN.TO']['percent'] == '38.9%'
     assert breakdown['VAB.TO']['percent'] == '61.1%'
 
-def test_get_account_with_missing_stock_market_value(investment_account_setup, client):
+def test_stats_missing_stock_market_value(investment_account_setup,
+                                          client):
     app = investment_account_setup
     with app.app_context():
         db.session.add(StockTransaction(**stock_transaction_1))
@@ -162,7 +181,7 @@ def test_get_account_with_missing_stock_market_value(investment_account_setup, c
     assert breakdown['VCN.TO']["formatted_value"] == "$3,312.00"
     assert breakdown['VCN.TO']['percent'] == '100.0%'
 
-def test_get_account_with_large_market_value(investment_account_setup, client):
+def test_stats_large_market_value(investment_account_setup, client):
     app = investment_account_setup
     with app.app_context():
         large = stock_transaction_1.copy()
