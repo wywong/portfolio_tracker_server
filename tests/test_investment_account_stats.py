@@ -41,6 +41,16 @@ stock_transaction_2 = dict(
     user_id = 1
 )
 
+stock_transaction_3 = dict(
+    transaction_type = StockTransactionType.buy,
+    stock_symbol = "ZPR.TO",
+    cost_per_unit = 960,
+    quantity = 555,
+    trade_fee = 995,
+    trade_date = date(2016, 8, 23),
+    account_id = None,
+    user_id = 1
+)
 
 @pytest.fixture
 def investment_account_setup(auth_app_user_1):

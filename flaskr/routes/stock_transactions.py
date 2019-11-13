@@ -7,6 +7,8 @@ import logging
 import traceback
 from flask import Blueprint, jsonify, request, make_response
 from flaskr import db
+from flaskr.generators.book_cost import BookCostGenerator
+from flaskr.generators.market_value import MarketValueGenerator
 from flaskr.model import (
     StockTransaction,
     StockTransactionType
@@ -221,3 +223,15 @@ def batch_delete_transaction():
         logging.error(traceback.format_exc())
         db.session.rollback()
         return ''
+
+@stock_transactions.route('/stats', methods=['GET'])
+@login_required
+def get_transaction_stats():
+    """
+    Returns a json object with stat values for all transactions associated with
+    the current user
+    """
+    return jsonify(dict(
+        book_cost = BookCostGenerator(current_user.id, None).next(),
+        market_value = MarketValueGenerator(current_user.id, None).next()
+    ))

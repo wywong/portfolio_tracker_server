@@ -4,8 +4,8 @@ import logging
 import traceback
 from flask import Blueprint, jsonify, request
 from flaskr import db, apply_user_id
+from flaskr.generators.book_cost import BookCostGenerator
 from flaskr.generators.market_value import MarketValueGenerator
-from flaskr.utils.formatting_utils import FormattingUtils
 from flaskr.model import (
     InvestmentAccount,
     StockTransaction
@@ -129,31 +129,9 @@ def delete_investment_account(id):
 @login_required
 def get_investment_account_stats(id):
     """
-    Returns a json object with relevant values for the investment account
+    Returns a json object with stat values for the investment account
     """
     return jsonify(dict(
-        book_cost = get_book_cost(id),
-        market_value = get_investment_account_market_price(id)
+        book_cost = BookCostGenerator(current_user.id, id).next(),
+        market_value = MarketValueGenerator(current_user.id, id).next()
     ))
-
-def get_book_cost(id):
-    """
-    Returns the computed book cost of all transactions in this account, if the
-    account has no tranasctions then N/A is returned.
-    """
-    book_cost = db.session.query(
-        func.sum(StockTransaction.cost_per_unit * StockTransaction.quantity + \
-                 StockTransaction.trade_fee) \
-            .filter((StockTransaction.account_id == id) & \
-                    (StockTransaction.user_id == current_user.id)) \
-    ).scalar()
-    if book_cost is None:
-        return "N/A"
-    return FormattingUtils.format_currency(book_cost)
-
-def get_investment_account_market_price(id):
-    """
-    Returns the market value of all the stocks in the portfolio
-    """
-    generator = MarketValueGenerator(current_user.id, id)
-    return generator.next()

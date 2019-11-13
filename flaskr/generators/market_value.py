@@ -14,9 +14,9 @@ class MarketValueGenerator():
         self.account_id = account_id
 
     def next(self):
-        return self.get_market_price()
+        return self.get_market_value()
 
-    def get_market_price(self):
+    def get_market_value(self):
         """
         Returns the market value of all the stocks in the portfolio
         """
