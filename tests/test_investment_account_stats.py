@@ -158,7 +158,7 @@ def test_get_account_buy_sell_market_value(investment_account_setup,
     assert breakdown['VCN.TO']['percent'] == '100.0%'
 
 def test_stats_multi_stock_market_value(investment_account_setup,
-                                                client):
+                                        client):
     app = investment_account_setup
     with app.app_context():
         db.session.add(StockTransaction(**stock_transaction_1))
