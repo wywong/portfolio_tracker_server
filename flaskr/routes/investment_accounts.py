@@ -4,6 +4,7 @@ import logging
 import traceback
 from flask import Blueprint, jsonify, request
 from flaskr import db, apply_user_id
+from flaskr.generators.adjust_cost_base import AdjustCostBaseGenerator
 from flaskr.generators.book_cost import BookCostGenerator
 from flaskr.generators.market_value import MarketValueGenerator
 from flaskr.model import (
@@ -132,6 +133,7 @@ def get_investment_account_stats(id):
     Returns a json object with stat values for the investment account
     """
     return jsonify(dict(
+        adjust_cost_base = AdjustCostBaseGenerator(current_user.id, id).next(),
         book_cost = BookCostGenerator(current_user.id, id).next(),
         market_value = MarketValueGenerator(current_user.id, id).next()
     ))
