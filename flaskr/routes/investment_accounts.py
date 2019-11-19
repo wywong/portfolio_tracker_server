@@ -133,7 +133,16 @@ def get_investment_account_stats(id):
     Returns a json object with stat values for the investment account
     """
     return jsonify(dict(
-        adjust_cost_base = AdjustCostBaseGenerator(current_user.id, id).next(),
         book_cost = BookCostGenerator(current_user.id, id).next(),
         market_value = MarketValueGenerator(current_user.id, id).next()
+    ))
+
+@investment_accounts.route('/<int:id>/acb', methods=['GET'])
+@login_required
+def get_investment_account_acb(id):
+    """
+    Returns an object with adjusted cost base values for the investment account
+    """
+    return jsonify(dict(
+        adjust_cost_base = AdjustCostBaseGenerator(current_user.id, id).next()
     ))

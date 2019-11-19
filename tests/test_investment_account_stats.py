@@ -143,39 +143,6 @@ def test_stats_two_transaction_book_value(investment_account_setup,
     json_data = json.loads(response.data)
     assert json_data['book_cost'] == "$8,362.98"
 
-def test_get_non_taxable_account_acb(investment_account_setup, client):
-    app = investment_account_setup
-    with app.app_context():
-        db.session.add(InvestmentAccount(**investment_account_2))
-        db.session.commit()
-    response = client.get('/investment_account/1/stats')
-    json_data = json.loads(response.data)
-    assert json_data['adjust_cost_base'] == {}
-
-
-def test_get_empty_account_acb(investment_account_setup, client):
-    app = investment_account_setup
-    with app.app_context():
-        db.session.add(InvestmentAccount(**investment_account_2))
-        db.session.commit()
-    response = client.get('/investment_account/2/stats')
-    json_data = json.loads(response.data)
-    assert json_data['adjust_cost_base'] == {}
-
-def test_get_one_stock_acb(investment_account_setup, client):
-    app = investment_account_setup
-    with app.app_context():
-        db.session.add(InvestmentAccount(**investment_account_2))
-        db.session.add(StockTransaction(**stock_transaction_4))
-        db.session.add(StockTransaction(**stock_transaction_5))
-        db.session.add(StockTransaction(**stock_transaction_6))
-        db.session.commit()
-    response = client.get('/investment_account/2/stats')
-    json_data = json.loads(response.data)
-    acbs = json_data['adjust_cost_base']
-    assert len(acbs) == 1
-    assert acbs['Bagel'] == '$5,054.08'
-
 def test_stats_one_transaction_market_value(investment_account_setup,
                                             client):
     app = investment_account_setup
