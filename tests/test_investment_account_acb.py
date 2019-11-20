@@ -150,3 +150,25 @@ def test_get_one_stock_acb(investment_account_setup, client):
     acbs = json_data['adjust_cost_base']
     assert len(acbs) == 1
     assert acbs['Bagel'] == '$5,054.08'
+
+def test_get_multi_stock_acb(investment_account_setup, client):
+    app = investment_account_setup
+    with app.app_context():
+        db.session.add(InvestmentAccount(**investment_account_2))
+        s1 = stock_transaction_1.copy()
+        s1['account_id'] = 2
+        s2 = stock_transaction_2.copy()
+        s2['account_id'] = 2
+        db.session.add(StockTransaction(**s1))
+        db.session.add(StockTransaction(**s2))
+        db.session.add(StockTransaction(**stock_transaction_4))
+        db.session.add(StockTransaction(**stock_transaction_5))
+        db.session.add(StockTransaction(**stock_transaction_6))
+        db.session.commit()
+    response = client.get('/investment_account/2/acb')
+    json_data = json.loads(response.data)
+    acbs = json_data['adjust_cost_base']
+    assert len(acbs) == 3
+    assert acbs['Bagel'] == '$5,054.08'
+    assert acbs['VAB.TO'] == '$5,211.99'
+    assert acbs['VCN.TO'] == '$3,150.99'
