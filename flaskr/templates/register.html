@@ -1,22 +1,23 @@
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='semantic.min.css') }}">
 {% endblock %}
 <div class="form-container">
-    <form method="POST" action="{{ url_for('auth_bp.register') }}">
+    <form class="ui form" method="POST" action="{{ url_for('auth_bp.register') }}">
         {{ form.csrf_token }}
-        <div class="form-group">
+        <div class="field">
             {{ form.email.label }}
             {{ form.email(size=128) }}
         </div>
-        <div class="form-group">
+        <div class="field">
             {{ form.password.label }}
             {{ form.password(size=128) }}
         </div>
-        <div class="form-group">
+        <div class="field">
             {{ form.confirm_password.label }}
             {{ form.confirm_password(size=128) }}
         </div>
-        {{ form.submit }}
+        {{ form.submit(class_="ui button") }}
     </form>
     {% with messages = get_flashed_messages() %}
         {% if messages %}
