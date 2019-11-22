@@ -3,5 +3,9 @@ python:
   - "3.7"
 install:
   - pip install -r requirements.txt
+env:
+  - FLASK_APP='portfolio.py'
+  - FLASK_ENV=development
+  - PORTFOLIO_CONFIG_FILE='dev.py'
 script:
   - pytest
