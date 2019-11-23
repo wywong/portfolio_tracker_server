@@ -5,5 +5,9 @@ install:
   - pip install -r requirements.txt
 env:
   - FLASK_APP='portfolio.py' FLASK_ENV=development PORTFOLIO_CONFIG_FILE='dev.py'
+services:
+  - postgresql
+before_script:
+  - psql -c 'create database portfoliotest;' -U postgres
 script:
   - pytest
