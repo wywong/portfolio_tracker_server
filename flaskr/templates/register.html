@@ -19,6 +19,10 @@
         </div>
         {{ form.submit(class_="ui button") }}
     </form>
+    <div>
+        By signing up you agree to the <a href="/legal/terms">Terms of
+            Service</a> and <a href="/legal/privacy">Privacy Policy</a>
+    </div>
     {% with messages = get_flashed_messages() %}
         {% if messages %}
             <ul class=flashes>
