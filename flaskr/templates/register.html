@@ -20,8 +20,14 @@
         {{ form.submit(class_="ui button") }}
     </form>
     <div>
-        By signing up you agree to the <a href="/legal/terms">Terms of
-            Service</a> and <a href="/legal/privacy">Privacy Policy</a>
+        By signing up you agree to the
+        <a href="/legal/terms.html" target="_blank" rel="noopener noreferrer">
+            Terms of Service
+        </a>
+        and
+        <a href="/legal/privacy.html" target="_blank" rel="noopener noreferrer">
+            Privacy Policy
+        </a>
     </div>
     {% with messages = get_flashed_messages() %}
         {% if messages %}
