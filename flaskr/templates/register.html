@@ -1,6 +1,7 @@
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='semantic.min.css') }}">
+    <title>Register</title>
 {% endblock %}
 <div class="form-container">
     <form class="ui form" method="POST" action="{{ url_for('auth_bp.register') }}">
