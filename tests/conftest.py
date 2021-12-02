@@ -12,7 +12,7 @@ def app():
         'WTF_CSRF_ENABLED': False,
         'SECRET_KEY': 'dev',
         'SQLALCHEMY_DATABASE_URI': \
-            'postgresql+psycopg2://postgres@localhost:5432/portfoliotest',
+            'postgresql:///portfoliotest',
         # 'SQLALCHEMY_ECHO':  True,
         'SQLALCHEMY_TRACK_MODIFICATIONS': False
     })
